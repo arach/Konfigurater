@@ -41,13 +41,13 @@ export default function RuleCard({ rule, onEdit, onDelete }: RuleCardProps) {
   const formatKeyCode = (keyData: any) => {
     if (typeof keyData === 'string') return keyData;
     
-    // Handle hardware button trigger indicator
-    if (keyData?._note) {
+    // Handle null or undefined from key (hardware button triggers)
+    if (!keyData) {
       return "Hardware Button";
     }
     
-    // Handle empty or undefined from key
-    if (!keyData || Object.keys(keyData).length === 0) {
+    // Handle empty objects
+    if (Object.keys(keyData).length === 0) {
       return "Hardware Button";
     }
     

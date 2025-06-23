@@ -191,7 +191,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             description: manipulator.description || karabinerRule.description,
             type: manipulator.type,
             enabled: true,
-            fromKey: manipulator.from || { _note: "Hardware button trigger" },
+            fromKey: manipulator.from || null,
             toActions: manipulator.to || [],
             conditions: manipulator.conditions || null,
             order: i * 100 + j,
