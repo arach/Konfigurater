@@ -156,9 +156,9 @@ export default function Home() {
           
           <div className="col-span-12 lg:col-span-9">
             {selectedConfig ? (
-              <div className="bg-white rounded-xl border border-slate-200">
-                <Tabs defaultValue="rules" className="w-full">
-                  <div className="border-b border-slate-200">
+              <div className="bg-white rounded-xl border border-slate-200 h-[calc(100vh-8rem)]">
+                <Tabs defaultValue="rules" className="w-full h-full flex flex-col">
+                  <div className="border-b border-slate-200 flex-shrink-0">
                     <TabsList className="grid w-full grid-cols-3 bg-transparent h-auto p-0">
                       <TabsTrigger 
                         value="rules" 
@@ -182,7 +182,7 @@ export default function Home() {
                     </TabsList>
                   </div>
 
-                  <TabsContent value="rules" className="p-6 mt-0">
+                  <TabsContent value="rules" className="p-6 mt-0 flex-1 overflow-auto">
                     <div className="flex items-center justify-between mb-6">
                       <h2 className="text-lg font-semibold text-slate-800">Keyboard Rules</h2>
                       <Button onClick={handleCreateRule} className="bg-blue-600 hover:bg-blue-700">
@@ -225,16 +225,21 @@ export default function Home() {
                     </div>
                   </TabsContent>
 
-                  <TabsContent value="json" className="p-6 mt-0">
-                    <div className="bg-slate-900 rounded-lg p-4">
+                  <TabsContent value="json" className="p-6 mt-0 h-full">
+                    <div className="bg-slate-900 rounded-lg p-4 h-full flex flex-col">
                       {isLoadingExport ? (
                         <div className="text-green-400 text-center py-8">
                           Loading JSON preview...
                         </div>
                       ) : exportJsonData ? (
-                        <pre className="text-sm text-green-400 font-mono overflow-auto max-h-96">
-                          <code>{JSON.stringify(exportJsonData, null, 2)}</code>
-                        </pre>
+                        <div className="flex-1 min-h-0">
+                          <div className="text-green-400 mb-2 text-xs">
+                            {exportJsonData.rules?.length || 0} rules found
+                          </div>
+                          <pre className="text-sm text-green-400 font-mono overflow-auto h-full border border-slate-700 rounded p-2">
+                            <code>{JSON.stringify(exportJsonData, null, 2)}</code>
+                          </pre>
+                        </div>
                       ) : (
                         <div className="text-green-400 text-center py-8">
                           Select a configuration to view JSON preview
@@ -243,7 +248,7 @@ export default function Home() {
                     </div>
                   </TabsContent>
 
-                  <TabsContent value="validation" className="p-6 mt-0">
+                  <TabsContent value="validation" className="p-6 mt-0 flex-1 overflow-auto">
                     <div className="space-y-4">
                       <div className="flex items-center space-x-2 text-sm">
                         <div className="w-2 h-2 bg-green-500 rounded-full"></div>
