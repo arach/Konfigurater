@@ -139,7 +139,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Parse Karabiner JSON and create configuration
   app.post("/api/configurations/import", async (req, res) => {
     try {
-      const { name, karabinerJson } = req.body;
+      const { name, karabinerJson, replaceExisting } = req.body;
       
       let rulesToProcess: any[] = [];
       let configTitle = name;
@@ -157,11 +157,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         throw new Error("No valid rules found in configuration");
       }
 
-      // Create configuration
-      const config = await storage.createConfiguration({
-        name: configTitle,
-        data: { title: configTitle, rules: rulesToProcess },
-      });
+      // Check for existing configurations with similar rule sets
+      const existingConfigs = await storage.getAllConfigurations();
+      const duplicateConfig = findDuplicateConfiguration(existingConfigs, rulesToProcess, configTitle);
+      
+      if (duplicateConfig && !replaceExisting) {
+        return res.status(409).json({
+          message: "Configuration with similar rules already exists",
+          existingConfig: duplicateConfig,
+          suggestion: "replace" // Could be "replace", "merge", or "createNew"
+        });
+      }
+
+      let config;
+      if (duplicateConfig && replaceExisting) {
+        // Delete existing rules and update configuration
+        const existingRules = await storage.getRulesForConfiguration(duplicateConfig.id);
+        for (const rule of existingRules) {
+          await storage.deleteRule(rule.id);
+        }
+        
+        config = await storage.updateConfiguration(duplicateConfig.id, {
+          name: configTitle,
+          data: { title: configTitle, rules: rulesToProcess },
+        });
+      } else {
+        // Create new configuration
+        config = await storage.createConfiguration({
+          name: configTitle,
+          data: { title: configTitle, rules: rulesToProcess },
+        });
+      }
 
       // Create individual rules for easier management
       const rules = [];
