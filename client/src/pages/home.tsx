@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Header from "@/components/header";
 import Sidebar from "@/components/sidebar";
@@ -15,6 +15,8 @@ export default function Home() {
   const [editingRule, setEditingRule] = useState<Rule | null>(null);
   const [isCreatingRule, setIsCreatingRule] = useState(false);
   const [showValidation, setShowValidation] = useState(false);
+  const [exportJsonData, setExportJsonData] = useState<any>(null);
+  const [isLoadingExport, setIsLoadingExport] = useState(false);
 
   const { data: configurations, isLoading: isLoadingConfigs } = useQuery<Configuration[]>({
     queryKey: ["/api/configurations"],
@@ -25,7 +27,49 @@ export default function Home() {
     enabled: !!selectedConfig,
   });
 
+  // Fetch export JSON data when selectedConfig changes
+  useEffect(() => {
+    const fetchExportData = async () => {
+      if (!selectedConfig) {
+        setExportJsonData(null);
+        return;
+      }
+      
+      setIsLoadingExport(true);
+      try {
+        const response = await fetch(`/api/configurations/${selectedConfig.id}/export`);
+        if (response.ok) {
+          const data = await response.json();
+          setExportJsonData(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch export data:", error);
+        setExportJsonData(null);
+      } finally {
+        setIsLoadingExport(false);
+      }
+    };
 
+    fetchExportData();
+  }, [selectedConfig]);
+
+  // Refresh export data when rules change
+  useEffect(() => {
+    if (selectedConfig && rules) {
+      const refreshExportData = async () => {
+        try {
+          const response = await fetch(`/api/configurations/${selectedConfig.id}/export`);
+          if (response.ok) {
+            const data = await response.json();
+            setExportJsonData(data);
+          }
+        } catch (error) {
+          console.error("Failed to refresh export data:", error);
+        }
+      };
+      refreshExportData();
+    }
+  }, [rules, selectedConfig]);
 
   const handleConfigSelect = (config: Configuration) => {
     setSelectedConfig(config);
@@ -183,9 +227,19 @@ export default function Home() {
 
                   <TabsContent value="json" className="p-6 mt-0">
                     <div className="bg-slate-900 rounded-lg p-4">
-                      <pre className="text-sm text-green-400 font-mono overflow-auto max-h-96">
-                        <code>{generateJsonPreview()}</code>
-                      </pre>
+                      {isLoadingExport ? (
+                        <div className="text-green-400 text-center py-8">
+                          Loading JSON preview...
+                        </div>
+                      ) : exportJsonData ? (
+                        <pre className="text-sm text-green-400 font-mono overflow-auto max-h-96">
+                          <code>{JSON.stringify(exportJsonData, null, 2)}</code>
+                        </pre>
+                      ) : (
+                        <div className="text-green-400 text-center py-8">
+                          Select a configuration to view JSON preview
+                        </div>
+                      )}
                     </div>
                   </TabsContent>
 
