@@ -186,6 +186,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const karabinerRule = rulesToProcess[i];
         for (let j = 0; j < karabinerRule.manipulators.length; j++) {
           const manipulator = karabinerRule.manipulators[j];
+          
+          // Debug logging for from field
+          console.log(`Rule: ${manipulator.description || karabinerRule.description}`);
+          console.log(`From field:`, JSON.stringify(manipulator.from, null, 2));
+          
           const rule = await storage.createRule({
             configurationId: config.id,
             description: manipulator.description || karabinerRule.description,
