@@ -24,18 +24,28 @@ export default function JsonPreviewModal({ isOpen, onClose, configuration }: Jso
   }, [isOpen, configuration]);
 
   const fetchJsonData = async () => {
-    if (!configuration) return;
+    if (!configuration) {
+      console.log("No configuration provided to fetchJsonData");
+      return;
+    }
     
+    console.log("Fetching JSON data for configuration:", configuration.id);
     setIsLoading(true);
     try {
       const response = await fetch(`/api/configurations/${configuration.id}/export`);
+      console.log("Export response status:", response.status);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log("Fetched JSON data:", data);
         setJsonData(data);
       } else {
-        throw new Error('Failed to fetch JSON data');
+        const errorText = await response.text();
+        console.error("Export failed:", response.status, errorText);
+        throw new Error(`Failed to fetch JSON data: ${response.status}`);
       }
     } catch (error) {
+      console.error("Error in fetchJsonData:", error);
       toast({
         title: "Error",
         description: "Failed to generate JSON preview",
