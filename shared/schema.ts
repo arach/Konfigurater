@@ -39,6 +39,7 @@ export const KarabinerActionSchema = z.object({
   pointing_button: z.string().optional(),
   modifiers: z.array(z.string()).optional(),
   shell_command: z.string().optional(),
+  lazy: z.boolean().optional(),
   set_variable: z.object({
     name: z.string(),
     value: z.union([z.string(), z.number(), z.boolean()]),
@@ -51,16 +52,33 @@ export const KarabinerConditionSchema = z.object({
   value: z.union([z.string(), z.number(), z.boolean()]).optional(),
   bundle_identifiers: z.array(z.string()).optional(),
   file_paths: z.array(z.string()).optional(),
+  identifiers: z.array(z.object({
+    vendor_id: z.number(),
+    product_id: z.number(),
+  })).optional(),
 });
 
 export const KarabinerManipulatorSchema = z.object({
   description: z.string().optional(),
   type: z.enum(["basic", "mouse_motion_to_scroll"]),
-  from: KarabinerKeySchema,
+  from: z.union([
+    KarabinerKeySchema,
+    z.object({
+      simultaneous: z.array(KarabinerKeySchema),
+      simultaneous_options: z.object({
+        detect_key_down_uninterruptedly: z.boolean().optional(),
+        key_down_order: z.string().optional(),
+        key_up_order: z.string().optional(),
+        to_after_key_up: z.array(KarabinerActionSchema).optional(),
+      }).optional(),
+    }),
+  ]),
   to: z.array(KarabinerActionSchema).optional(),
   to_if_alone: z.array(KarabinerActionSchema).optional(),
   to_after_key_up: z.array(KarabinerActionSchema).optional(),
+  to_if_held_down: z.array(KarabinerActionSchema).optional(),
   conditions: z.array(KarabinerConditionSchema).optional(),
+  parameters: z.record(z.union([z.string(), z.number(), z.boolean()])).optional(),
 });
 
 export const KarabinerRuleSchema = z.object({
@@ -71,6 +89,20 @@ export const KarabinerRuleSchema = z.object({
 export const KarabinerConfigSchema = z.object({
   title: z.string(),
   rules: z.array(KarabinerRuleSchema),
+});
+
+// Full Karabiner profile structure
+export const KarabinerProfileSchema = z.object({
+  complex_modifications: z.object({
+    rules: z.array(KarabinerRuleSchema),
+  }).optional(),
+  name: z.string().optional(),
+  selected: z.boolean().optional(),
+});
+
+export const KarabinerFullConfigSchema = z.object({
+  profiles: z.array(KarabinerProfileSchema),
+  global: z.object({}).optional(),
 });
 
 export const insertConfigurationSchema = createInsertSchema(configurations).pick({
@@ -96,3 +128,5 @@ export type Rule = typeof rules.$inferSelect;
 export type KarabinerConfig = z.infer<typeof KarabinerConfigSchema>;
 export type KarabinerRule = z.infer<typeof KarabinerRuleSchema>;
 export type KarabinerManipulator = z.infer<typeof KarabinerManipulatorSchema>;
+export type KarabinerProfile = z.infer<typeof KarabinerProfileSchema>;
+export type KarabinerFullConfig = z.infer<typeof KarabinerFullConfigSchema>;

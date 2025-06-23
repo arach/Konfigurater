@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertConfigurationSchema, insertRuleSchema, KarabinerConfigSchema } from "@shared/schema";
+import { insertConfigurationSchema, insertRuleSchema, KarabinerConfigSchema, KarabinerFullConfigSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -141,19 +141,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { name, karabinerJson } = req.body;
       
-      // Validate the Karabiner JSON structure
-      const validatedConfig = KarabinerConfigSchema.parse(karabinerJson);
-      
+      let rulesToProcess: any[] = [];
+      let configTitle = name;
+
+      // Try to parse as full Karabiner config first
+      try {
+        const fullConfig = KarabinerFullConfigSchema.parse(karabinerJson);
+        
+        // Extract rules from the first profile with complex modifications
+        const profileWithRules = fullConfig.profiles.find(p => p.complex_modifications?.rules);
+        if (profileWithRules && profileWithRules.complex_modifications) {
+          rulesToProcess = profileWithRules.complex_modifications.rules;
+          configTitle = profileWithRules.name || name;
+        }
+      } catch {
+        // If that fails, try parsing as a simple config
+        const simpleConfig = KarabinerConfigSchema.parse(karabinerJson);
+        rulesToProcess = simpleConfig.rules;
+        configTitle = simpleConfig.title || name;
+      }
+
       // Create configuration
       const config = await storage.createConfiguration({
-        name,
-        data: validatedConfig,
+        name: configTitle,
+        data: { title: configTitle, rules: rulesToProcess },
       });
 
       // Create individual rules for easier management
       const rules = [];
-      for (let i = 0; i < validatedConfig.rules.length; i++) {
-        const karabinerRule = validatedConfig.rules[i];
+      for (let i = 0; i < rulesToProcess.length; i++) {
+        const karabinerRule = rulesToProcess[i];
         for (let j = 0; j < karabinerRule.manipulators.length; j++) {
           const manipulator = karabinerRule.manipulators[j];
           const rule = await storage.createRule({
