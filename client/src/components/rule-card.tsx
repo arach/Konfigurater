@@ -89,7 +89,7 @@ export default function RuleCard({ rule, onEdit, onDelete }: RuleCardProps) {
               <h3 className="font-medium text-slate-800">{rule.description}</h3>
               <div className="flex items-center space-x-2 mt-1">
                 <Badge variant="secondary" className="text-xs">
-                  {rule.type.replace('_', ' ')}
+                  {rule.type ? rule.type.replace('_', ' ') : 'basic'}
                 </Badge>
                 {rule.conditions && (
                   <Badge variant="outline" className="text-xs">
@@ -148,7 +148,7 @@ export default function RuleCard({ rule, onEdit, onDelete }: RuleCardProps) {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
-              <Switch checked={rule.enabled} readOnly />
+              <Switch checked={rule.enabled || false} disabled />
               <span className="text-sm text-slate-600">Enabled</span>
             </div>
           </div>

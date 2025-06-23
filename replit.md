@@ -102,6 +102,10 @@ The application allows users to create configurations with multiple keyboard rul
 ```
 Changelog:
 - June 23, 2025. Initial setup
+- June 23, 2025. Enhanced Karabiner import functionality to support full profile structure
+- June 23, 2025. Added support for advanced Karabiner features: device conditions, simultaneous keys, complex modifiers
+- June 23, 2025. Fixed runtime errors in RuleCard component for better stability
+- June 23, 2025. Successfully tested import with complex user configuration file containing 12+ rules
 ```
 
 ## User Preferences
