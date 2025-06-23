@@ -106,6 +106,8 @@ Changelog:
 - June 23, 2025. Added support for advanced Karabiner features: device conditions, simultaneous keys, complex modifiers
 - June 23, 2025. Fixed runtime errors in RuleCard component for better stability
 - June 23, 2025. Successfully tested import with complex user configuration file containing 12+ rules
+- June 23, 2025. Implemented dual JSON preview system: header modal with copy/download + in-tab preview
+- June 23, 2025. Fixed JSON Preview tab layout issues - now displays complete configuration with proper scrolling
 ```
 
 ## User Preferences
