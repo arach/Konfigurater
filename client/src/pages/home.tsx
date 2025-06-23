@@ -20,10 +20,12 @@ export default function Home() {
     queryKey: ["/api/configurations"],
   });
 
-  const { data: rules, isLoading: isLoadingRules } = useQuery<Rule[]>({
-    queryKey: ["/api/configurations", selectedConfig?.id, "rules"],
+  const { data: rules, isLoading: isLoadingRules, error: rulesError } = useQuery<Rule[]>({
+    queryKey: [`/api/configurations/${selectedConfig?.id}/rules`],
     enabled: !!selectedConfig,
   });
+
+
 
   const handleConfigSelect = (config: Configuration) => {
     setSelectedConfig(config);
@@ -148,6 +150,10 @@ export default function Home() {
                     <div className="space-y-4">
                       {isLoadingRules ? (
                         <div className="text-center py-8 text-slate-500">Loading rules...</div>
+                      ) : rulesError ? (
+                        <div className="text-center py-8 text-red-500">
+                          Error loading rules: {rulesError?.message || 'Unknown error'}
+                        </div>
                       ) : rules && rules.length > 0 ? (
                         rules.map((rule) => (
                           <RuleCard
@@ -159,11 +165,17 @@ export default function Home() {
                             }}
                           />
                         ))
-                      ) : (
+                      ) : selectedConfig ? (
                         <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors cursor-pointer" onClick={handleCreateRule}>
                           <Plus className="mx-auto text-slate-400 text-2xl mb-3 w-8 h-8" />
-                          <h3 className="text-lg font-medium text-slate-600 mb-1">Add New Rule</h3>
-                          <p className="text-sm text-slate-500">Create a custom keyboard modification rule</p>
+                          <h3 className="text-lg font-medium text-slate-600 mb-1">No Rules Found</h3>
+                          <p className="text-sm text-slate-500">This configuration has no rules yet. Click to add one.</p>
+                        </div>
+                      ) : (
+                        <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center">
+                          <Plus className="mx-auto text-slate-400 text-2xl mb-3 w-8 h-8" />
+                          <h3 className="text-lg font-medium text-slate-600 mb-1">Select Configuration</h3>
+                          <p className="text-sm text-slate-500">Choose a configuration to view its rules</p>
                         </div>
                       )}
                     </div>
