@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Download, HelpCircle, Keyboard } from "lucide-react";
+import { Download, HelpCircle, Keyboard, Eye } from "lucide-react";
 import { type Configuration } from "@shared/schema";
+import JsonPreviewModal from "./json-preview-modal";
 
 interface HeaderProps {
   selectedConfig: Configuration | null;
@@ -8,6 +10,7 @@ interface HeaderProps {
 }
 
 export default function Header({ selectedConfig, onExport }: HeaderProps) {
+  const [showJsonPreview, setShowJsonPreview] = useState(false);
   return (
     <header className="bg-white border-b border-slate-200 px-6 py-4">
       <div className="flex items-center justify-between max-w-7xl mx-auto">

@@ -1,8 +1,32 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertConfigurationSchema, insertRuleSchema, KarabinerConfigSchema, KarabinerFullConfigSchema } from "@shared/schema";
+import { insertConfigurationSchema, insertRuleSchema, KarabinerConfigSchema, KarabinerFullConfigSchema, Configuration } from "@shared/schema";
 import { z } from "zod";
+
+// Helper function to detect duplicate configurations
+function findDuplicateConfiguration(existingConfigs: Configuration[], newRules: any[], newTitle: string): Configuration | null {
+  for (const config of existingConfigs) {
+    // Check if names match exactly
+    if (config.name === newTitle) {
+      return config;
+    }
+    
+    // Check if rule sets are similar (same number of rules with similar descriptions)
+    const existingRules = config.data?.rules || [];
+    if (existingRules.length === newRules.length && existingRules.length > 0) {
+      const existingDescriptions = existingRules.map((r: any) => r.description).sort();
+      const newDescriptions = newRules.map((r: any) => r.description).sort();
+      
+      // If 80% or more descriptions match, consider it a duplicate
+      const matches = existingDescriptions.filter((desc: string, i: number) => desc === newDescriptions[i]).length;
+      if (matches / existingDescriptions.length >= 0.8) {
+        return config;
+      }
+    }
+  }
+  return null;
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Configuration routes
@@ -187,6 +211,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           name: configTitle,
           data: { title: configTitle, rules: rulesToProcess },
         });
+      }
+
+      if (!config) {
+        throw new Error("Failed to create or update configuration");
       }
 
       // Create individual rules for easier management
