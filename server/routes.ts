@@ -144,34 +144,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let rulesToProcess: any[] = [];
       let configTitle = name;
 
-      // Try to parse as full Karabiner config first
-      try {
-        const fullConfig = KarabinerFullConfigSchema.parse(karabinerJson);
+      // Extract rules directly without strict schema validation to preserve complex from fields
+      if (karabinerJson?.profiles?.[0]?.complex_modifications?.rules) {
+        rulesToProcess = karabinerJson.profiles[0].complex_modifications.rules;
+        configTitle = karabinerJson.profiles[0].name || name;
         
-        // Extract rules from the first profile with complex modifications
-        const profileWithRules = fullConfig.profiles.find(p => p.complex_modifications?.rules);
-        if (profileWithRules && profileWithRules.complex_modifications) {
-          rulesToProcess = profileWithRules.complex_modifications.rules;
-          configTitle = profileWithRules.name || name;
-        }
-      } catch (fullConfigError) {
-        // If that fails, try parsing as a simple config
-        try {
-          const simpleConfig = KarabinerConfigSchema.parse(karabinerJson);
-          rulesToProcess = simpleConfig.rules;
-          configTitle = simpleConfig.title || name;
-        } catch (simpleConfigError) {
-          // If both fail, try to extract rules manually from the structure
-          if (karabinerJson?.profiles?.[0]?.complex_modifications?.rules) {
-            rulesToProcess = karabinerJson.profiles[0].complex_modifications.rules;
-            configTitle = karabinerJson.profiles[0].name || name;
-          } else if (karabinerJson?.rules) {
-            rulesToProcess = karabinerJson.rules;
-            configTitle = karabinerJson.title || name;
-          } else {
-            throw new Error("No valid rules found in configuration");
-          }
-        }
+        // Debug: Check Button 7 data exists in raw rules
+        rulesToProcess.forEach((rule, i) => {
+          rule.manipulators?.forEach((manipulator, j) => {
+            if (manipulator.description?.includes("Button 7")) {
+              console.log(`RAW Button 7 from field (rule ${i}, manipulator ${j}):`, JSON.stringify(manipulator.from, null, 2));
+            }
+          });
+        });
+      } else if (karabinerJson?.rules) {
+        rulesToProcess = karabinerJson.rules;
+        configTitle = karabinerJson.title || name;
+      } else {
+        throw new Error("No valid rules found in configuration");
       }
 
       // Create configuration
@@ -186,10 +176,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const karabinerRule = rulesToProcess[i];
         for (let j = 0; j < karabinerRule.manipulators.length; j++) {
           const manipulator = karabinerRule.manipulators[j];
-          
-          // Debug logging for from field
-          console.log(`Rule: ${manipulator.description || karabinerRule.description}`);
-          console.log(`From field:`, JSON.stringify(manipulator.from, null, 2));
           
           const rule = await storage.createRule({
             configurationId: config.id,
