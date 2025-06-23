@@ -41,10 +41,20 @@ export default function RuleCard({ rule, onEdit, onDelete }: RuleCardProps) {
   const formatKeyCode = (keyData: any) => {
     if (typeof keyData === 'string') return keyData;
     
+    // Handle hardware button trigger indicator
+    if (keyData?._note) {
+      return "Hardware Button";
+    }
+    
+    // Handle empty or undefined from key
+    if (!keyData || Object.keys(keyData).length === 0) {
+      return "Hardware Button";
+    }
+    
     // Handle simultaneous keys
     if (keyData?.simultaneous) {
       const keys = keyData.simultaneous.map((k: any) => k.key_code || JSON.stringify(k)).join(" + ");
-      return `Simultaneous: ${keys}`;
+      return `${keys} (simultaneous)`;
     }
     
     // Handle single key with modifiers
@@ -56,7 +66,16 @@ export default function RuleCard({ rule, onEdit, onDelete }: RuleCardProps) {
       return keyData.key_code;
     }
     
-    return JSON.stringify(keyData);
+    // Handle other complex patterns
+    if (keyData?.consumer_key_code) {
+      return keyData.consumer_key_code;
+    }
+    
+    if (keyData?.pointing_button) {
+      return `Mouse: ${keyData.pointing_button}`;
+    }
+    
+    return "Complex Pattern";
   };
 
   const formatActions = (actions: any) => {

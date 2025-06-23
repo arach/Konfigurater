@@ -154,11 +154,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
           rulesToProcess = profileWithRules.complex_modifications.rules;
           configTitle = profileWithRules.name || name;
         }
-      } catch {
+      } catch (fullConfigError) {
         // If that fails, try parsing as a simple config
-        const simpleConfig = KarabinerConfigSchema.parse(karabinerJson);
-        rulesToProcess = simpleConfig.rules;
-        configTitle = simpleConfig.title || name;
+        try {
+          const simpleConfig = KarabinerConfigSchema.parse(karabinerJson);
+          rulesToProcess = simpleConfig.rules;
+          configTitle = simpleConfig.title || name;
+        } catch (simpleConfigError) {
+          // If both fail, try to extract rules manually from the structure
+          if (karabinerJson?.profiles?.[0]?.complex_modifications?.rules) {
+            rulesToProcess = karabinerJson.profiles[0].complex_modifications.rules;
+            configTitle = karabinerJson.profiles[0].name || name;
+          } else if (karabinerJson?.rules) {
+            rulesToProcess = karabinerJson.rules;
+            configTitle = karabinerJson.title || name;
+          } else {
+            throw new Error("No valid rules found in configuration");
+          }
+        }
       }
 
       // Create configuration
@@ -178,7 +191,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             description: manipulator.description || karabinerRule.description,
             type: manipulator.type,
             enabled: true,
-            fromKey: manipulator.from,
+            fromKey: manipulator.from || { _note: "Hardware button trigger" },
             toActions: manipulator.to || [],
             conditions: manipulator.conditions || null,
             order: i * 100 + j,

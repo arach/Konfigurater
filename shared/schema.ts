@@ -72,7 +72,8 @@ export const KarabinerManipulatorSchema = z.object({
         to_after_key_up: z.array(KarabinerActionSchema).optional(),
       }).optional(),
     }),
-  ]),
+    z.object({}), // Allow empty from objects
+  ]).optional(),
   to: z.array(KarabinerActionSchema).optional(),
   to_if_alone: z.array(KarabinerActionSchema).optional(),
   to_after_key_up: z.array(KarabinerActionSchema).optional(),
