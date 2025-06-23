@@ -95,14 +95,19 @@ export const KarabinerConfigSchema = z.object({
 export const KarabinerProfileSchema = z.object({
   complex_modifications: z.object({
     rules: z.array(KarabinerRuleSchema),
+    parameters: z.record(z.any()).optional(),
   }).optional(),
   name: z.string().optional(),
   selected: z.boolean().optional(),
+  simple_modifications: z.array(z.any()).optional(),
+  fn_function_keys: z.array(z.any()).optional(),
+  devices: z.array(z.any()).optional(),
+  virtual_hid_keyboard: z.object({}).optional(),
 });
 
 export const KarabinerFullConfigSchema = z.object({
   profiles: z.array(KarabinerProfileSchema),
-  global: z.object({}).optional(),
+  global: z.record(z.any()).optional(),
 });
 
 export const insertConfigurationSchema = createInsertSchema(configurations).pick({

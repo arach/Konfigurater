@@ -25,10 +25,12 @@ const COMMON_KEYS = [
   "1", "2", "3", "4", "5", "6", "7", "8", "9", "0",
   "f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10", "f11", "f12",
   "left_arrow", "right_arrow", "up_arrow", "down_arrow",
-  "volume_up", "volume_down", "mute"
+  "volume_up", "volume_down", "mute", "spacebar",
+  "keypad_plus", "keypad_hyphen", "keypad_0", "keypad_1", "keypad_2", "keypad_3", "keypad_4", "keypad_5",
+  "left_control", "right_control", "left_command", "right_command", "left_option", "right_option", "left_shift", "right_shift"
 ];
 
-const MODIFIERS = ["command", "option", "control", "shift"];
+const MODIFIERS = ["command", "option", "control", "shift", "left_command", "right_command", "left_option", "right_option", "left_control", "right_control", "left_shift", "right_shift"];
 
 export default function RuleEditorModal({ rule, configurationId, onClose, onSave }: RuleEditorModalProps) {
   const [formData, setFormData] = useState({

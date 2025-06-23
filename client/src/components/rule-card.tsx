@@ -40,15 +40,37 @@ export default function RuleCard({ rule, onEdit, onDelete }: RuleCardProps) {
 
   const formatKeyCode = (keyData: any) => {
     if (typeof keyData === 'string') return keyData;
-    if (keyData?.key_code) return keyData.key_code;
+    
+    // Handle simultaneous keys
+    if (keyData?.simultaneous) {
+      const keys = keyData.simultaneous.map((k: any) => k.key_code || JSON.stringify(k)).join(" + ");
+      return `Simultaneous: ${keys}`;
+    }
+    
+    // Handle single key with modifiers
+    if (keyData?.key_code) {
+      const modifiers = keyData.modifiers?.mandatory || keyData.modifiers?.optional || [];
+      if (modifiers.length > 0) {
+        return `${modifiers.join(" + ")} + ${keyData.key_code}`;
+      }
+      return keyData.key_code;
+    }
+    
     return JSON.stringify(keyData);
   };
 
   const formatActions = (actions: any) => {
     if (!Array.isArray(actions)) return "N/A";
     return actions.map(action => {
-      if (action.key_code) return action.key_code;
-      if (action.shell_command) return action.shell_command;
+      if (action.key_code) {
+        const modifiers = action.modifiers || [];
+        if (modifiers.length > 0) {
+          return `${modifiers.join(" + ")} + ${action.key_code}`;
+        }
+        return action.key_code;
+      }
+      if (action.shell_command) return `Shell: ${action.shell_command}`;
+      if (action.set_variable) return `Set: ${action.set_variable.name}=${action.set_variable.value}`;
       return JSON.stringify(action);
     }).join(", ");
   };

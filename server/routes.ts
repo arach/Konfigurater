@@ -208,19 +208,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Convert rules back to Karabiner format
-      const karabinerRules = [];
-      const ruleGroups = new Map();
+      const karabinerRules: any[] = [];
+      const ruleGroups = new Map<string, any[]>();
 
       // Group rules by description for complex modifications
-      rules.forEach(rule => {
+      rules.forEach((rule: any) => {
         if (!ruleGroups.has(rule.description)) {
           ruleGroups.set(rule.description, []);
         }
-        ruleGroups.get(rule.description).push(rule);
+        ruleGroups.get(rule.description)!.push(rule);
       });
 
       ruleGroups.forEach((groupRules, description) => {
-        const manipulators = groupRules.map(rule => ({
+        const manipulators = groupRules.map((rule: any) => ({
           description: rule.description,
           type: rule.type,
           from: rule.fromKey,
