@@ -149,14 +149,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         rulesToProcess = karabinerJson.profiles[0].complex_modifications.rules;
         configTitle = karabinerJson.profiles[0].name || name;
         
-        // Debug: Check Button 7 data exists in raw rules
-        rulesToProcess.forEach((rule, i) => {
-          rule.manipulators?.forEach((manipulator, j) => {
-            if (manipulator.description?.includes("Button 7")) {
-              console.log(`RAW Button 7 from field (rule ${i}, manipulator ${j}):`, JSON.stringify(manipulator.from, null, 2));
-            }
-          });
-        });
+
       } else if (karabinerJson?.rules) {
         rulesToProcess = karabinerJson.rules;
         configTitle = karabinerJson.title || name;
@@ -177,12 +170,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         for (let j = 0; j < karabinerRule.manipulators.length; j++) {
           const manipulator = karabinerRule.manipulators[j];
           
+
+          
           const rule = await storage.createRule({
             configurationId: config.id,
             description: manipulator.description || karabinerRule.description,
             type: manipulator.type,
             enabled: true,
-            fromKey: manipulator.from || null,
+            fromKey: manipulator.from !== undefined ? manipulator.from : null,
             toActions: manipulator.to || [],
             conditions: manipulator.conditions || null,
             order: i * 100 + j,
