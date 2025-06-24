@@ -5,6 +5,7 @@ import Sidebar from "@/components/sidebar";
 import RuleCard from "@/components/rule-card";
 import RuleEditorModal from "@/components/rule-editor-modal";
 import ValidationPanel from "@/components/validation-panel";
+import SmartRecommendations from "@/components/smart-recommendations";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus } from "lucide-react";
@@ -77,6 +78,39 @@ export default function Home() {
 
   const handleEditRule = (rule: Rule) => {
     setEditingRule(rule);
+  };
+
+  const handleCreateRuleFromSuggestion = (suggestion: any) => {
+    // Convert suggestion pattern to rule format
+    const newRule = {
+      configurationId: selectedConfig!.id,
+      description: suggestion.title,
+      type: "basic",
+      fromKey: suggestion.pattern.from,
+      toActions: suggestion.pattern.to,
+      conditions: suggestion.pattern.conditions || null,
+      enabled: true
+    };
+    
+    // Create the rule via API
+    const createRule = async () => {
+      try {
+        const response = await fetch(`/api/configurations/${selectedConfig!.id}/rules`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newRule)
+        });
+        
+        if (response.ok) {
+          // Refresh rules data
+          window.location.reload();
+        }
+      } catch (error) {
+        console.error('Failed to create rule from suggestion:', error);
+      }
+    };
+    
+    createRule();
   };
 
   const handleCreateRule = () => {
@@ -159,7 +193,7 @@ export default function Home() {
               <div className="bg-white rounded-xl border border-slate-200 h-[calc(100vh-8rem)]">
                 <Tabs defaultValue="rules" className="w-full h-full flex flex-col">
                   <div className="border-b border-slate-200 flex-shrink-0">
-                    <TabsList className="grid w-full grid-cols-3 bg-transparent h-auto p-0">
+                    <TabsList className="grid w-full grid-cols-4 bg-transparent h-auto p-0">
                       <TabsTrigger 
                         value="rules" 
                         className="py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:text-blue-600"
@@ -178,6 +212,12 @@ export default function Home() {
                         onClick={() => setShowValidation(true)}
                       >
                         Validation
+                      </TabsTrigger>
+                      <TabsTrigger 
+                        value="recommendations" 
+                        className="py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:text-blue-600"
+                      >
+                        Recommendations
                       </TabsTrigger>
                     </TabsList>
                   </div>
@@ -259,6 +299,14 @@ export default function Home() {
                         <span className="text-slate-700">{rules?.length || 0} rules processed successfully</span>
                       </div>
                     </div>
+                  </TabsContent>
+
+                  <TabsContent value="recommendations" className="p-6 mt-0 flex-1 overflow-auto">
+                    <SmartRecommendations
+                      configuration={selectedConfig}
+                      rules={rules || []}
+                      onCreateRule={handleCreateRuleFromSuggestion}
+                    />
                   </TabsContent>
                 </Tabs>
               </div>
