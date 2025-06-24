@@ -111,6 +111,7 @@ Changelog:
 - June 24, 2025. Added visual rule highlighting system with purple borders for AI recommendations and green for session edits
 - June 24, 2025. Implemented comprehensive diff view showing configuration changes with categorized rule tracking
 - June 24, 2025. Fixed tab layout alignment issues - all content areas now properly contained within viewport height
+- June 24, 2025. Enhanced Changes tab with JSON diff view showing structured changes and rule metadata
 ```
 
 ## User Preferences

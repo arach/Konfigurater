@@ -150,7 +150,7 @@ export default function Home() {
     setIsCreatingRule(false);
   };
 
-  const handleRuleSaved = (savedRule: Rule) => {
+  const handleRuleSaved = (savedRule?: Rule) => {
     // Track manually created/edited rules as session edits
     if (savedRule?.id) {
       setSessionRuleIds(prev => new Set(Array.from(prev).concat(savedRule.id)));
@@ -360,6 +360,48 @@ export default function Home() {
                           </div>
                         </div>
                       </div>
+
+                      {/* JSON Diff View */}
+                      {(recommendedRuleIds.size > 0 || sessionRuleIds.size > 0) && (
+                        <div className="mb-6">
+                          <h4 className="text-md font-medium text-slate-700 mb-3">JSON Changes</h4>
+                          <div className="bg-slate-900 rounded-lg p-4 max-h-80 overflow-auto">
+                            <pre className="text-sm text-green-400 font-mono leading-relaxed">
+                              {JSON.stringify({
+                                "new_rules_added": [
+                                  ...Array.from(recommendedRuleIds).map(id => {
+                                    const rule = rules?.find(r => r.id === id);
+                                    return rule ? {
+                                      description: rule.description,
+                                      type: rule.type,
+                                      source: "ai_recommendation",
+                                      from: rule.fromKey,
+                                      to: rule.toActions,
+                                      conditions: rule.conditions || null
+                                    } : null;
+                                  }).filter(Boolean),
+                                  ...Array.from(sessionRuleIds).map(id => {
+                                    const rule = rules?.find(r => r.id === id);
+                                    return rule ? {
+                                      description: rule.description,
+                                      type: rule.type,
+                                      source: "manual_edit",
+                                      from: rule.fromKey,
+                                      to: rule.toActions,
+                                      conditions: rule.conditions || null
+                                    } : null;
+                                  }).filter(Boolean)
+                                ],
+                                "summary": {
+                                  "ai_recommendations": recommendedRuleIds.size,
+                                  "manual_edits": sessionRuleIds.size,
+                                  "total_new_rules": recommendedRuleIds.size + sessionRuleIds.size
+                                }
+                              }, null, 2)}
+                            </pre>
+                          </div>
+                        </div>
+                      )}
 
                       {recommendedRuleIds.size === 0 && sessionRuleIds.size === 0 ? (
                         <div className="text-center py-12 text-slate-500">
