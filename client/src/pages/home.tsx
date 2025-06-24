@@ -7,6 +7,7 @@ import RuleEditorModal from "@/components/rule-editor-modal";
 import ValidationPanel from "@/components/validation-panel";
 import SmartRecommendations from "@/components/smart-recommendations";
 import DiffView from "@/components/diff-view";
+import ChatAssistant from "@/components/chat-assistant";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus } from "lucide-react";
