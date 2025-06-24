@@ -208,7 +208,7 @@ export default function Home() {
       // Convert each manipulator to our rule format
       const manipulators = jsonRule.manipulators || [jsonRule];
       
-      manipulators.forEach((manipulator: any, index: number) => {
+      manipulators.forEach(async (manipulator: any, index: number) => {
         // Ensure we have the required fields
         if (!manipulator.from || !manipulator.to) {
           console.error('Invalid manipulator:', manipulator);
@@ -241,11 +241,42 @@ export default function Home() {
           toActions: manipulator.to,
           conditions: conditions,
           order: (rules?.length || 0) + index + 1,
-          configurationId: selectedConfig.id
+          enabled: true
         };
         
-        console.log('Creating rule:', newRule);
-        createRuleMutation.mutate(newRule);
+        console.log('Creating rule via API:', newRule);
+        
+        // Use direct API call instead of the mutation
+        try {
+          const response = await fetch(`/api/configurations/${selectedConfig.id}/rules`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newRule)
+          });
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`API Error: ${errorText}`);
+          }
+          
+          const createdRule = await response.json();
+          toast({
+            title: "Rule Added",
+            description: `Successfully added: ${newRule.description}`
+          });
+          
+          // Refresh the rules
+          queryClient.invalidateQueries({ queryKey: [`/api/configurations/${selectedConfig.id}/rules`] });
+          queryClient.invalidateQueries({ queryKey: ["/api/configurations"] });
+          
+        } catch (apiError) {
+          console.error('API Error creating rule:', apiError);
+          toast({
+            title: "API Error",
+            description: `Failed to create rule: ${apiError.message}`,
+            variant: "destructive"
+          });
+        }
       });
     } catch (error) {
       console.error('Error creating rule from JSON:', error);

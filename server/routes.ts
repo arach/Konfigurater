@@ -175,15 +175,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/configurations/:id/rules", async (req, res) => {
     try {
       const configurationId = parseInt(req.params.id);
+      console.log('Creating rule for configuration:', configurationId);
+      console.log('Rule data:', JSON.stringify(req.body, null, 2));
+      
       const ruleData = { ...req.body, configurationId };
+      
+      // Handle device_if conditions properly
+      if (ruleData.conditions) {
+        ruleData.conditions = ruleData.conditions.map((condition: any) => {
+          if (condition.type === 'device_if' && condition.identifiers) {
+            condition.identifiers = condition.identifiers.map((id: any) => ({
+              ...id,
+              vendor_id: typeof id.vendor_id === 'string' ? parseInt(id.vendor_id) : id.vendor_id,
+              product_id: typeof id.product_id === 'string' ? parseInt(id.product_id) : id.product_id
+            }));
+          }
+          return condition;
+        });
+      }
+      
       const validatedData = insertRuleSchema.parse(ruleData);
       const rule = await storage.createRule(validatedData);
       res.status(201).json(rule);
     } catch (error) {
+      console.error("Failed to create rule:", error);
+      console.error("Request body:", req.body);
       if (error instanceof z.ZodError) {
+        console.error("Validation errors:", error.errors);
         return res.status(400).json({ message: "Validation error", errors: error.errors });
       }
-      res.status(500).json({ message: "Failed to create rule" });
+      res.status(500).json({ message: "Failed to create rule", error: error instanceof Error ? error.message : String(error) });
     }
   });
 
