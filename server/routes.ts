@@ -399,39 +399,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const { default: OpenAI } = await import('openai');
         const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-        const systemPrompt = `You are a keyboard shortcut expert specializing in DOIO devices and Karabiner-Elements. 
-        
-Current configuration has ${rules.length} rules using these combinations: ${usedCombinations.join(', ')}
+        const systemPrompt = `You are a helpful keyboard customization assistant for Karabiner-Elements and DOIO devices. Be conversational and respond naturally to user questions.
 
-Available F-keys for DOIO: f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24
+Context:
+- User has ${rules.length} rules configured
+- Currently used key combinations: ${usedCombinations.join(', ') || 'none'}
+- Available DOIO F-keys: f13-f24
+- Device capabilities: DOIO macro buttons, standard keyboard
 
-Your task: Suggest 2-3 unused key combinations for DOIO devices. Respond with JSON in this format:
+Respond conversationally. Only suggest specific key combinations when the user asks for them or when it's clearly helpful. Focus on understanding what they want to accomplish.
+
+If suggesting keys, respond with JSON:
 {
-  "response": "Brief explanation",
-  "suggestions": [
-    {
-      "combination": "cmd+f13",
-      "description": "Brief action description", 
-      "reasoning": "Why this combo works"
-    }
-  ]
+  "response": "Your conversational response",
+  "suggestions": [{"combination": "key", "description": "what it does", "reasoning": "why this works"}]
 }
 
-Prefer F-keys with modifiers. Avoid used combinations.`;
+If just chatting (no key suggestions needed), respond with JSON:
+{
+  "response": "Your conversational response"
+}`;
 
         const response = await openai.chat.completions.create({
           model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
           messages: [
             { role: "system", content: systemPrompt },
-            ...conversationHistory.slice(-6).map(msg => ({
+            ...conversationHistory.slice(-8).map(msg => ({
               role: msg.role as "user" | "assistant",
               content: msg.content
             })),
             { role: "user", content: message }
           ],
           response_format: { type: "json_object" },
-          max_tokens: 800,
-          temperature: 0.7
+          max_tokens: 1200,
+          temperature: 0.8
         });
 
         const result = JSON.parse(response.choices[0].message.content || '{}');

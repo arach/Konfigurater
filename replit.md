@@ -119,6 +119,8 @@ Changelog:
 - June 24, 2025. Created comprehensive README with project philosophy, usage instructions, and acknowledgments
 - June 24, 2025. Implemented chat assistant with DOIO-specific key mapping suggestions and conversational interface
 - June 24, 2025. Enhanced chat with conversation history and contextual responses for continuous messaging
+- June 24, 2025. Fixed chat to actually use OpenAI API instead of basic suggestions for intelligent responses
+- June 24, 2025. Made chat assistant more conversational and less prescriptive, responding naturally to user input
 ```
 
 ## User Preferences
