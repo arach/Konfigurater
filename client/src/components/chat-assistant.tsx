@@ -24,6 +24,9 @@ interface KeySuggestion {
 
 interface ChatAssistantProps {
   rules: Rule[];
+  configuration?: Configuration | null;
+  exportJsonData?: any;
+  originalConfiguration?: any;
   onCreateRule?: (suggestion: KeySuggestion) => void;
 }
 
@@ -60,7 +63,14 @@ export default function ChatAssistant({
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ message, rules, conversationHistory }),
+        body: JSON.stringify({ 
+          message, 
+          rules, 
+          conversationHistory,
+          currentConfiguration: exportJsonData,
+          originalConfiguration: originalConfiguration || configuration?.data,
+          configurationId: configuration?.id
+        }),
       });
 
       if (!response.ok) {

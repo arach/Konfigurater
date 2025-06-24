@@ -369,7 +369,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Chat assistant endpoint
   app.post("/api/chat/suggest-keys", async (req, res) => {
     try {
-      const { message, rules, conversationHistory = [] } = req.body;
+      const { 
+        message, 
+        rules, 
+        conversationHistory = [], 
+        configurationId,
+        currentConfiguration,
+        originalConfiguration 
+      } = req.body;
       
       console.log('Checking OPENAI_API_KEY:', process.env.OPENAI_API_KEY ? 'Present' : 'Missing');
       
@@ -396,6 +403,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log('Device info from rules:', deviceInfo);
       
+      // Get full configuration context if available
+      let fullConfig = null;
+      if (configurationId) {
+        try {
+          const config = await storage.getConfiguration(configurationId);
+          fullConfig = config?.data || null;
+        } catch (error) {
+          console.error('Error fetching configuration:', error);
+        }
+      }
+      
       if (!process.env.OPENAI_API_KEY) {
         return res.status(200).json({ 
           response: "No OpenAI API key found. Using basic suggestions mode.",
@@ -410,15 +428,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const systemPrompt = `You are a Karabiner-Elements JSON expert. NEVER use shell_command - always provide real key mappings.
 
-Current Configuration:
-- ${rules.length} existing rules using: ${usedCombinations.join(', ') || 'none'}
+ORIGINAL CONFIGURATION:
+${originalConfiguration ? JSON.stringify(originalConfiguration, null, 2).substring(0, 2000) + '...' : 'Not available'}
+
+CURRENT CONFIGURATION (after edits):
+${currentConfiguration ? JSON.stringify(currentConfiguration, null, 2).substring(0, 2000) + '...' : 'Not available'}
+
+CONTEXT:
+- ${rules.length} active rules using: ${usedCombinations.join(', ') || 'none'}
 - Device identifiers: ${JSON.stringify(deviceInfo)}
 
 CRITICAL RULES:
-1. NEVER use "shell_command" - it's useless
-2. Always use actual key mappings with "key_code" and "modifiers"
-3. Provide specific, working examples like opening apps, typing text, or triggering shortcuts
-4. Use existing device IDs: vendor_id/product_id from user's config
+1. NEVER use "shell_command" - always provide real key mappings
+2. Use actual device identifiers from the user's configuration
+3. Reference both original and current configurations to understand changes
+4. Provide specific, working examples for real applications
+5. Help troubleshoot issues by comparing before/after configurations
+
+Device identifiers from configuration:
+${deviceInfo.length > 0 ? JSON.stringify(deviceInfo[0], null, 2) : 'Use standard DOIO device IDs: vendor_id: 12625, product_id: 16400'}
 
 Example of GOOD "to" structure:
 \`\`\`json
@@ -430,18 +458,9 @@ Example of GOOD "to" structure:
 ]
 \`\`\`
 
-Example of BAD "to" structure (NEVER DO THIS):
-\`\`\`json
-"to": [
-  {
-    "shell_command": "# Configure action"
-  }
-]
-\`\`\`
-
 Always respond with JSON:
 {
-  "response": "Your helpful response with working key mappings"
+  "response": "Your helpful response with working key mappings and configuration analysis"
 }`;
 
         const response = await openai.chat.completions.create({
