@@ -32,18 +32,45 @@ export default function Sidebar({
 
   const importMutation = useMutation({
     mutationFn: async (data: { name: string; karabinerJson: any }) => {
-      const response = await apiRequest("POST", "/api/configurations/import", data);
-      return response.json();
+      console.log('🚀 Starting import mutation with data:', {
+        name: data.name,
+        jsonStructure: {
+          hasProfiles: !!data.karabinerJson.profiles,
+          hasRules: !!data.karabinerJson.rules,
+          hasTitle: !!data.karabinerJson.title,
+          topLevelKeys: Object.keys(data.karabinerJson)
+        }
+      });
+      
+      try {
+        const response = await apiRequest("POST", "/api/configurations/import", data);
+        console.log('📡 API response status:', response.status);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('❌ API error response:', errorText);
+          throw new Error(`API error ${response.status}: ${errorText}`);
+        }
+        
+        const result = await response.json();
+        console.log('✅ Import successful:', result);
+        return result;
+      } catch (error) {
+        console.error('❌ Import mutation error:', error);
+        throw error;
+      }
     },
     onSuccess: (data) => {
+      console.log('🎉 Import mutation success:', data);
       queryClient.invalidateQueries({ queryKey: ["/api/configurations"] });
       onConfigSelect(data.config);
       toast({
         title: "Configuration imported successfully",
-        description: `Imported ${data.rules.length} rules`,
+        description: `Imported ${data.rules?.length || 0} rules`,
       });
     },
     onError: (error: any) => {
+      console.error('💥 Import mutation error handler:', error);
       toast({
         title: "Import failed",
         description: error.message || "Failed to import configuration",
@@ -53,16 +80,36 @@ export default function Sidebar({
   });
 
   const handleFileUpload = async (file: File) => {
+    console.log('📁 File upload started:', file.name, 'Size:', file.size, 'Type:', file.type);
+    
     try {
       const text = await file.text();
+      console.log('📄 File content length:', text.length);
+      console.log('📄 File content preview:', text.substring(0, 200) + '...');
+      
       const karabinerJson = JSON.parse(text);
+      console.log('✅ JSON parsed successfully');
+      console.log('📋 Parsed structure:', {
+        hasProfiles: !!karabinerJson.profiles,
+        hasRules: !!karabinerJson.rules,
+        hasTitle: !!karabinerJson.title,
+        topLevelKeys: Object.keys(karabinerJson)
+      });
+      
       const name = file.name.replace(/\.json$/, "");
+      console.log('🏷️ Import name:', name);
       
       importMutation.mutate({ name, karabinerJson });
     } catch (error) {
+      console.error('❌ File upload error:', error);
+      console.error('❌ Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : null
+      });
+      
       toast({
         title: "Invalid file",
-        description: "Please upload a valid JSON file",
+        description: `Parse error: ${error instanceof Error ? error.message : 'Please upload a valid JSON file'}`,
         variant: "destructive",
       });
     }
