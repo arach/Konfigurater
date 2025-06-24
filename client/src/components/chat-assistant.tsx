@@ -196,7 +196,29 @@ export default function ChatAssistant({ rules, onCreateRule }: ChatAssistantProp
                     : 'bg-slate-100 text-slate-800'
                 }`}
               >
-                <p className="whitespace-pre-wrap break-words">{message.content}</p>
+                <div className="whitespace-pre-wrap break-words">
+                  {message.content.split('```').map((part, index) => {
+                    if (index % 2 === 1) {
+                      // This is a code block
+                      const code = part.replace(/^json\n/, '');
+                      return (
+                        <div key={index} className="relative my-2">
+                          <pre className="bg-slate-800 text-green-400 p-3 rounded text-xs overflow-x-auto font-mono">
+                            <code>{code}</code>
+                          </pre>
+                          <button
+                            onClick={() => handleCopyToClipboard(code)}
+                            className="absolute top-2 right-2 p-1 rounded bg-slate-700 hover:bg-slate-600 text-white text-xs"
+                          >
+                            Copy
+                          </button>
+                        </div>
+                      );
+                    }
+                    // Regular text
+                    return <span key={index}>{part}</span>;
+                  })}
+                </div>
                 
                 {message.suggestions && message.suggestions.length > 0 && (
                   <div className="mt-2 space-y-2">

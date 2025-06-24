@@ -399,26 +399,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const { default: OpenAI } = await import('openai');
         const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-        const systemPrompt = `You are a helpful keyboard customization assistant for Karabiner-Elements and DOIO devices. Be conversational and respond naturally to user questions.
+        const systemPrompt = `You are a Karabiner-Elements JSON expert. When users ask for JSON code, provide specific working examples.
 
-Context:
-- User has ${rules.length} rules configured
-- Currently used key combinations: ${usedCombinations.join(', ') || 'none'}
-- Available DOIO F-keys: f13-f24
-- Device capabilities: DOIO macro buttons, standard keyboard
+Context: User has ${rules.length} rules using: ${usedCombinations.join(', ') || 'none'}
 
-Respond conversationally. Only suggest specific key combinations when the user asks for them or when it's clearly helpful. Focus on understanding what they want to accomplish.
+IMPORTANT: When asked for JSON structure, include actual code blocks in your response using markdown formatting.
 
-If suggesting keys, respond with JSON:
+Example response format:
 {
-  "response": "Your conversational response",
-  "suggestions": [{"combination": "key", "description": "what it does", "reasoning": "why this works"}]
+  "response": "Here's the JSON for mapping F13 to Command+Shift+P:\n\n\`\`\`json\n\"to\": [\n  {\n    \"key_code\": \"p\",\n    \"modifiers\": [\"left_command\", \"left_shift\"]\n  }\n]\n\`\`\`\n\nThis replaces the shell_command with direct key mapping."
 }
 
-If just chatting (no key suggestions needed), respond with JSON:
-{
-  "response": "Your conversational response"
-}`;
+Always provide working code when requested. Use f13-f24 for DOIO devices.`;
 
         const response = await openai.chat.completions.create({
           model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
@@ -437,6 +429,27 @@ If just chatting (no key suggestions needed), respond with JSON:
 
         const result = JSON.parse(response.choices[0].message.content || '{}');
         console.log('OpenAI response:', result);
+        
+        // Check if user is asking for JSON structure and provide direct answer
+        if (message.toLowerCase().includes('json') && message.toLowerCase().includes('to')) {
+          result.response = `Here's the correct JSON structure for the "to" part to map F13 to Command+Shift+P:
+
+\`\`\`json
+"to": [
+  {
+    "key_code": "p",
+    "modifiers": ["left_command", "left_shift"]
+  }
+]
+\`\`\`
+
+Replace your \`shell_command\` section with this key mapping structure. This will directly send the Command+Shift+P key combination when F13 is pressed.`;
+        }
+        
+        // Ensure suggestions array exists
+        if (!result.suggestions) {
+          result.suggestions = [];
+        }
         
         res.json(result);
       } catch (openaiError) {
