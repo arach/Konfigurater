@@ -114,6 +114,9 @@ Changelog:
 - June 24, 2025. Enhanced Changes tab with JSON diff view showing structured changes and rule metadata
 - June 24, 2025. Implemented Git-style side-by-side diff view with before/after comparison and highlighted additions
 - June 24, 2025. Added development auto-import feature to automatically load Karabiner configuration on startup
+- June 24, 2025. Enhanced diff view with unified JSON format and proper indentation for better readability
+- June 24, 2025. Implemented drag and drop functionality for rule reordering with visual feedback
+- June 24, 2025. Created comprehensive README with project philosophy, usage instructions, and acknowledgments
 ```
 
 ## User Preferences
