@@ -20,6 +20,8 @@ export default function Home() {
   const [showValidation, setShowValidation] = useState(false);
   const [exportJsonData, setExportJsonData] = useState<any>(null);
   const [isLoadingExport, setIsLoadingExport] = useState(false);
+  const [sessionRuleIds, setSessionRuleIds] = useState<Set<number>>(new Set());
+  const [recommendedRuleIds, setRecommendedRuleIds] = useState<Set<number>>(new Set());
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -111,11 +113,16 @@ export default function Home() {
       
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({
         title: "Rule Added",
         description: "Smart recommendation successfully added to your configuration",
       });
+      
+      // Track this rule as recommended
+      if (data?.id) {
+        setRecommendedRuleIds(prev => new Set(Array.from(prev).concat(data.id)));
+      }
       
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: [`/api/configurations/${selectedConfig?.id}/rules`] });

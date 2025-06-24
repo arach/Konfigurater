@@ -9,9 +9,11 @@ interface RuleCardProps {
   rule: Rule;
   onEdit: () => void;
   onDelete: () => void;
+  isRecommended?: boolean;
+  isSessionEdit?: boolean;
 }
 
-export default function RuleCard({ rule, onEdit, onDelete }: RuleCardProps) {
+export default function RuleCard({ rule, onEdit, onDelete, isRecommended = false, isSessionEdit = false }: RuleCardProps) {
   const getTypeIcon = (type: string) => {
     switch (type) {
       case "basic":
@@ -96,16 +98,50 @@ export default function RuleCard({ rule, onEdit, onDelete }: RuleCardProps) {
 
   const TypeIcon = getTypeIcon(rule.type);
 
+  // Determine styling based on rule origin
+  const getCardClassName = () => {
+    let baseClasses = "bg-slate-50 border-slate-200 transition-all duration-200 hover:shadow-md";
+    
+    if (isRecommended) {
+      baseClasses = "border-2 border-purple-300 bg-purple-50/40 shadow-lg shadow-purple-100/50 transition-all duration-200 hover:shadow-xl hover:shadow-purple-200/60";
+    } else if (isSessionEdit) {
+      baseClasses = "border-2 border-green-300 bg-green-50/40 shadow-lg shadow-green-100/50 transition-all duration-200 hover:shadow-xl hover:shadow-green-200/60";
+    }
+    
+    return baseClasses;
+  };
+
+  const getHeaderClassName = () => {
+    if (isRecommended) {
+      return "border-l-4 border-purple-500 pl-3";
+    } else if (isSessionEdit) {
+      return "border-l-4 border-green-500 pl-3";
+    }
+    return "";
+  };
+
+  const getBadgeContent = () => {
+    if (isRecommended) {
+      return <span className="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded-full font-medium">AI Recommended</span>;
+    } else if (isSessionEdit) {
+      return <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full font-medium">Session Edit</span>;
+    }
+    return null;
+  };
+
   return (
-    <Card className="bg-slate-50 border-slate-200">
+    <Card className={getCardClassName()}>
       <CardContent className="p-6">
         <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center space-x-3">
+          <div className={`flex items-center space-x-3 ${getHeaderClassName()}`}>
             <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${getTypeColor(rule.type)}`}>
               <TypeIcon className="w-5 h-5" />
             </div>
-            <div>
-              <h3 className="font-medium text-slate-800">{rule.description}</h3>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="font-medium text-slate-800">{rule.description}</h3>
+                {getBadgeContent()}
+              </div>
               <div className="flex items-center space-x-2 mt-1">
                 <Badge variant="secondary" className="text-xs">
                   {rule.type ? rule.type.replace('_', ' ') : 'basic'}
