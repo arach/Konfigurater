@@ -108,6 +108,9 @@ Changelog:
 - June 23, 2025. Successfully tested import with complex user configuration file containing 12+ rules
 - June 23, 2025. Implemented dual JSON preview system: header modal with copy/download + in-tab preview
 - June 23, 2025. Fixed JSON Preview tab layout issues - now displays complete configuration with proper scrolling
+- June 24, 2025. Added visual rule highlighting system with purple borders for AI recommendations and green for session edits
+- June 24, 2025. Implemented comprehensive diff view showing configuration changes with categorized rule tracking
+- June 24, 2025. Fixed tab layout alignment issues - all content areas now properly contained within viewport height
 ```
 
 ## User Preferences

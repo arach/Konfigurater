@@ -150,6 +150,14 @@ export default function Home() {
     setIsCreatingRule(false);
   };
 
+  const handleRuleSaved = (savedRule: Rule) => {
+    // Track manually created/edited rules as session edits
+    if (savedRule?.id) {
+      setSessionRuleIds(prev => new Set(Array.from(prev).concat(savedRule.id)));
+    }
+    handleCloseRuleEditor();
+  };
+
   const generateJsonPreview = () => {
     if (!selectedConfig || !rules) return "{}";
     
@@ -437,10 +445,7 @@ export default function Home() {
           rule={editingRule}
           configurationId={selectedConfig?.id}
           onClose={handleCloseRuleEditor}
-          onSave={() => {
-            handleCloseRuleEditor();
-            // Refetch rules after save
-          }}
+          onSave={handleRuleSaved}
         />
       )}
 

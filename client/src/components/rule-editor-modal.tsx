@@ -16,7 +16,7 @@ interface RuleEditorModalProps {
   rule: Rule | null;
   configurationId?: number;
   onClose: () => void;
-  onSave: () => void;
+  onSave: (savedRule?: Rule) => void;
 }
 
 const COMMON_KEYS = [
