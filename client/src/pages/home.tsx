@@ -166,6 +166,62 @@ export default function Home() {
     handleCloseRuleEditor();
   };
 
+  const handleDeleteRule = async (ruleId: number) => {
+    try {
+      const response = await fetch(`/api/rules/${ruleId}`, {
+        method: 'DELETE'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete rule');
+      }
+      
+      toast({
+        title: "Rule Deleted",
+        description: "Rule successfully removed"
+      });
+      
+      // Refresh the rules
+      queryClient.invalidateQueries({ queryKey: [`/api/configurations/${selectedConfig?.id}/rules`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/configurations"] });
+      
+    } catch (error) {
+      toast({
+        title: "Delete Failed",
+        description: "Failed to delete rule",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleReorderRules = async (newOrder: Rule[]) => {
+    if (!selectedConfig) return;
+    
+    try {
+      const ruleIds = newOrder.map(rule => rule.id);
+      
+      const response = await fetch(`/api/configurations/${selectedConfig.id}/rules/reorder`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ruleIds })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to reorder rules');
+      }
+      
+      // Refresh the rules
+      queryClient.invalidateQueries({ queryKey: [`/api/configurations/${selectedConfig.id}/rules`] });
+      
+    } catch (error) {
+      toast({
+        title: "Reorder Failed",
+        description: "Failed to reorder rules",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleChatCreateRule = (suggestion: any) => {
     const keyParts = suggestion.combination.split('+');
     const keyCode = keyParts.pop();

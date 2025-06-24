@@ -228,13 +228,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/rules/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      console.log('Deleting rule:', id);
       const deleted = await storage.deleteRule(id);
       if (!deleted) {
         return res.status(404).json({ message: "Rule not found" });
       }
       res.status(204).send();
     } catch (error) {
+      console.error('Failed to delete rule:', error);
       res.status(500).json({ message: "Failed to delete rule" });
+    }
+  });
+
+  app.post("/api/configurations/:id/rules/reorder", async (req, res) => {
+    try {
+      const configurationId = parseInt(req.params.id);
+      const { ruleIds } = req.body;
+      
+      console.log('Reordering rules for configuration:', configurationId, 'with order:', ruleIds);
+      
+      await storage.reorderRules(configurationId, ruleIds);
+      res.status(200).json({ message: "Rules reordered successfully" });
+    } catch (error) {
+      console.error('Failed to reorder rules:', error);
+      res.status(500).json({ message: "Failed to reorder rules" });
     }
   });
 
