@@ -55,6 +55,8 @@ export default function Home() {
         if (response.ok) {
           const data = await response.json();
           setExportJsonData(data);
+        } else {
+          setExportJsonData(null);
         }
       } catch (error) {
         console.error("Failed to fetch export data:", error);
@@ -66,6 +68,14 @@ export default function Home() {
 
     fetchExportData();
   }, [selectedConfig]);
+
+  // Track imported rules when rules data loads
+  useEffect(() => {
+    if (selectedConfig && rules && rules.length > 0 && originalRules.length === 0) {
+      setOriginalRules([...rules]);
+      setImportedRuleIds(new Set(rules.map(r => r.id)));
+    }
+  }, [rules, selectedConfig, originalRules.length]);
 
   // Refresh export data when rules change
   useEffect(() => {
@@ -87,16 +97,8 @@ export default function Home() {
 
   const handleConfigSelect = (config: Configuration) => {
     setSelectedConfig(config);
-    
-    // When selecting a configuration, track the current rules as the baseline
-    if (rules && rules.length > 0) {
-      setOriginalRules([...rules]);
-      setImportedRuleIds(new Set(rules.map(r => r.id)));
-    } else {
-      setOriginalRules([]);
-      setImportedRuleIds(new Set());
-    }
-    
+    setOriginalRules([]);
+    setImportedRuleIds(new Set());
     setRecommendedRuleIds(new Set());
     setSessionRuleIds(new Set());
   };
