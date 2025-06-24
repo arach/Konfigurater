@@ -41,6 +41,15 @@ export default function Home() {
     enabled: !!selectedConfig,
   });
 
+  const { data: configurations, isLoading: isLoadingConfigs } = useQuery<Configuration[]>({
+    queryKey: ["/api/configurations"],
+  });
+
+  const { data: rules, isLoading: isLoadingRules, error: rulesError } = useQuery<Rule[]>({
+    queryKey: [`/api/configurations/${selectedConfig?.id}/rules`],
+    enabled: !!selectedConfig,
+  });
+
   // Fetch export data for JSON preview
   useEffect(() => {
     if (!selectedConfig) {
