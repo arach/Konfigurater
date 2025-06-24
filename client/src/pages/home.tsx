@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import Header from "@/components/header";
 import Sidebar from "@/components/sidebar";
 import RuleCard from "@/components/rule-card";
-import RuleEditorModal from "@/components/rule-editor-modal";
+import RuleEditorModal from "@/components/rule-editor-modal-new";
 import ValidationPanel from "@/components/validation-panel";
 import SmartRecommendations from "@/components/smart-recommendations";
 import DiffView from "@/components/diff-view";
@@ -475,9 +475,7 @@ export default function Home() {
                             key={rule.id}
                             rule={rule}
                             onEdit={() => handleEditRule(rule)}
-                            onDelete={() => {
-                              // TODO: Implement delete functionality
-                            }}
+                            onDelete={() => handleDeleteRule(rule.id)}
                             isRecommended={recommendedRuleIds.has(rule.id)}
                             isSessionEdit={sessionRuleIds.has(rule.id)}
                           />
