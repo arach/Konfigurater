@@ -222,27 +222,33 @@ export default function ChatAssistant({
                 }`}
               >
                 <div className="whitespace-pre-wrap break-words">
-                  {message.content.split("```").map((part, index) => {
-                    if (index % 2 === 1) {
-                      // This is a code block
-                      const code = part.replace(/^json\n/, "");
-                      return (
-                        <div key={index} className="relative my-2">
-                          <pre className="bg-slate-800 text-green-400 p-3 rounded text-xs overflow-x-auto font-mono">
-                            <code>{code}</code>
-                          </pre>
-                          <button
-                            onClick={() => handleCopyToClipboard(code)}
-                            className="absolute top-2 right-2 p-1 rounded bg-slate-700 hover:bg-slate-600 text-white text-xs"
-                          >
-                            Copy
-                          </button>
-                        </div>
-                      );
-                    }
-                    // Regular text
-                    return <span key={index}>{part}</span>;
-                  })}
+                  {typeof message.content === 'string' ? (
+                    message.content.split("```").map((part, index) => {
+                      if (index % 2 === 1) {
+                        // This is a code block
+                        const code = part.replace(/^json\n/, "");
+                        return (
+                          <div key={index} className="relative my-2">
+                            <pre className="bg-slate-800 text-green-400 p-3 rounded text-xs overflow-x-auto font-mono">
+                              <code>{code}</code>
+                            </pre>
+                            <button
+                              onClick={() => handleCopyToClipboard(code)}
+                              className="absolute top-2 right-2 p-1 rounded bg-slate-700 hover:bg-slate-600 text-white text-xs"
+                            >
+                              Copy
+                            </button>
+                          </div>
+                        );
+                      }
+                      // Regular text
+                      return <span key={index}>{part}</span>;
+                    })
+                  ) : (
+                    <div className="text-slate-600 text-sm font-mono bg-slate-50 p-2 rounded">
+                      <pre>{JSON.stringify(message.content, null, 2)}</pre>
+                    </div>
+                  )}
                 </div>
 
                 {message.suggestions && message.suggestions.length > 0 && (

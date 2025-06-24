@@ -402,6 +402,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }).flat();
       
       console.log('Device info from rules:', deviceInfo);
+      console.log('Original config received:', originalConfiguration ? 'Present (length: ' + JSON.stringify(originalConfiguration).length + ')' : 'Missing');
+      console.log('Current config received:', currentConfiguration ? 'Present (length: ' + JSON.stringify(currentConfiguration).length + ')' : 'Missing');
       
       // Get full configuration context if available
       let fullConfig = null;
@@ -426,13 +428,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const { default: OpenAI } = await import('openai');
         const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+        // Use the configuration data that was passed in
+        const configToShow = currentConfiguration || originalConfiguration || fullConfig;
+        
         const systemPrompt = `You are a Karabiner-Elements JSON expert. NEVER use shell_command - always provide real key mappings.
 
-ORIGINAL CONFIGURATION:
-${originalConfiguration ? JSON.stringify(originalConfiguration, null, 2).substring(0, 2000) + '...' : 'Not available'}
+USER'S KARABINER CONFIGURATION:
+${configToShow ? JSON.stringify(configToShow, null, 2).substring(0, 3000) + (JSON.stringify(configToShow).length > 3000 ? '...' : '') : 'No configuration data available'}
 
-CURRENT CONFIGURATION (after edits):
-${currentConfiguration ? JSON.stringify(currentConfiguration, null, 2).substring(0, 2000) + '...' : 'Not available'}
+ANALYSIS CONTEXT:
+- Configuration contains ${rules.length} processed rules
+- Device data available: ${deviceInfo.length > 0 ? 'Yes' : 'No'}
 
 CONTEXT:
 - ${rules.length} active rules using: ${usedCombinations.join(', ') || 'none'}
