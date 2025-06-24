@@ -80,6 +80,7 @@ export default function Home() {
   const [sessionRuleIds, setSessionRuleIds] = useState<Set<number>>(new Set());
   const [recommendedRuleIds, setRecommendedRuleIds] = useState<Set<number>>(new Set());
   const [originalRules, setOriginalRules] = useState<Rule[]>([]);
+  const [importedRuleIds, setImportedRuleIds] = useState<Set<number>>(new Set());
   const [draggedRule, setDraggedRule] = useState<Rule | null>(null);
   
   const { toast } = useToast();
@@ -553,29 +554,7 @@ export default function Home() {
                                 Error loading rules: {rulesError?.message || 'Unknown error'}
                               </div>
                             ) : rules && rules.length > 0 ? (
-                              rules.map((rule, index) => (
-                                <Draggable key={rule.id} draggableId={rule.id.toString()} index={index}>
-                                  {(provided, snapshot) => (
-                                    <div
-                                      ref={provided.innerRef}
-                                      {...provided.draggableProps}
-                                      {...provided.dragHandleProps}
-                                      style={{
-                                        ...provided.draggableProps.style,
-                                        opacity: snapshot.isDragging ? 0.8 : 1,
-                                      }}
-                                    >
-                                      <RuleCard
-                                        rule={rule}
-                                        onEdit={() => handleEditRule(rule)}
-                                        onDelete={() => handleDeleteRule(rule.id)}
-                                        isRecommended={recommendedRuleIds.has(rule.id)}
-                                        isSessionEdit={sessionRuleIds.has(rule.id)}
-                                      />
-                                    </div>
-                                  )}
-                                </Draggable>
-                              ))
+
                       ) : selectedConfig ? (
                         <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors cursor-pointer" onClick={handleCreateRule}>
                           <Plus className="mx-auto text-slate-400 text-2xl mb-3 w-8 h-8" />
@@ -588,7 +567,8 @@ export default function Home() {
                           <h3 className="text-lg font-medium text-slate-600 mb-1">Select Configuration</h3>
                           <p className="text-sm text-slate-500">Choose a configuration to view its rules</p>
                         </div>
-
+                      )}
+                    </div>
                   </TabsContent>
 
                   <TabsContent value="json" className="p-6 mt-0 h-full">
