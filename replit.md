@@ -125,6 +125,8 @@ Changelog:
 - June 24, 2025. Added full configuration context to chat - now sends both original and current JSON to ChatGPT for troubleshooting
 - June 24, 2025. Added "Add Rule" button to chat JSON code blocks - users can directly import rule configurations from ChatGPT responses
 - June 24, 2025. Fixed diff view tracking to properly distinguish between original imported rules and session modifications
+- June 24, 2025. Resolved runtime errors by adding proper null checks and fallback states for all tab components
+- June 24, 2025. Stabilized drag-and-drop functionality using react-beautiful-dnd with known deprecation warnings (non-blocking)
 ```
 
 ## User Preferences

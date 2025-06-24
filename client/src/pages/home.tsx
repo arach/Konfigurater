@@ -338,45 +338,54 @@ export default function Home() {
             </TabsContent>
 
             <TabsContent value="recommendations" className="p-6 mt-0 h-full">
-              {selectedConfig && (
+              {selectedConfig ? (
                 <SmartRecommendations
                   configuration={selectedConfig}
                   rules={rules || []}
                   onCreateRule={(suggestion: any) => {
-                    // Handle smart recommendation rule creation
                     console.log('Smart recommendation:', suggestion);
                   }}
                 />
+              ) : (
+                <div className="text-center py-8 text-slate-500">
+                  Select a configuration to view recommendations
+                </div>
               )}
             </TabsContent>
 
             <TabsContent value="changes" className="p-6 mt-0 h-full">
-              {selectedConfig && (
+              {selectedConfig ? (
                 <DiffView
                   originalRules={originalRules}
                   newRules={rules || []}
                   recommendedRuleIds={recommendedRuleIds}
                   sessionRuleIds={sessionRuleIds}
                 />
+              ) : (
+                <div className="text-center py-8 text-slate-500">
+                  Select a configuration to view changes
+                </div>
               )}
             </TabsContent>
 
             <TabsContent value="chat" className="p-6 mt-0 h-full">
-              {selectedConfig && (
+              {selectedConfig ? (
                 <ChatAssistant
                   rules={rules || []}
                   configuration={selectedConfig}
                   exportJsonData={exportJsonData}
                   originalConfiguration={originalRules}
                   onCreateRule={(suggestion: any) => {
-                    // Handle chat rule creation
                     console.log('Chat rule creation:', suggestion);
                   }}
                   onCreateRuleFromJson={(jsonRule: any) => {
-                    // Handle JSON rule creation from chat
                     console.log('JSON rule from chat:', jsonRule);
                   }}
                 />
+              ) : (
+                <div className="text-center py-8 text-slate-500">
+                  Select a configuration to start chatting
+                </div>
               )}
             </TabsContent>
           </Tabs>
