@@ -1,24 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import {
-  useSortable,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import Header from "@/components/header";
 import Sidebar from "@/components/sidebar";
 import RuleCard from "@/components/rule-card";
@@ -34,41 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { type Configuration, type Rule } from "@shared/schema";
 
-// Sortable Rule Card Component
-function SortableRuleCard({ rule, onEdit, onDelete, isRecommended, isSessionEdit }: {
-  rule: Rule;
-  onEdit: () => void;
-  onDelete: () => void;
-  isRecommended: boolean;
-  isSessionEdit: boolean;
-}) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: rule.id.toString() });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.8 : 1,
-  };
-
-  return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <RuleCard
-        rule={rule}
-        onEdit={onEdit}
-        onDelete={onDelete}
-        isRecommended={isRecommended}
-        isSessionEdit={isSessionEdit}
-      />
-    </div>
-  );
-}
 
 export default function Home() {
   const [selectedConfig, setSelectedConfig] = useState<Configuration | null>(null);
@@ -141,10 +89,18 @@ export default function Home() {
 
   const handleConfigSelect = (config: Configuration) => {
     setSelectedConfig(config);
-    // Reset tracking when switching configurations but keep original empty
-    setSessionRuleIds(new Set());
+    
+    // When selecting a configuration, track the current rules as the baseline
+    if (rules && rules.length > 0) {
+      setOriginalRules([...rules]);
+      setImportedRuleIds(new Set(rules.map(r => r.id)));
+    } else {
+      setOriginalRules([]);
+      setImportedRuleIds(new Set());
+    }
+    
     setRecommendedRuleIds(new Set());
-    setOriginalRules([]); // Always start with empty baseline
+    setSessionRuleIds(new Set());
   };
 
   const handleEditRule = (rule: Rule) => {
@@ -215,11 +171,15 @@ export default function Home() {
   };
 
   const handleRuleSaved = (savedRule?: Rule) => {
-    // Track manually created/edited rules as session edits
-    if (savedRule?.id) {
-      setSessionRuleIds(prev => new Set(Array.from(prev).concat(savedRule.id)));
+    setEditingRule(null);
+    if (savedRule) {
+      // Mark as session edit only if it's not from the original import
+      if (!importedRuleIds.has(savedRule.id)) {
+        setSessionRuleIds(prev => new Set(prev).add(savedRule.id));
+      }
     }
-    handleCloseRuleEditor();
+    queryClient.invalidateQueries({ queryKey: [`/api/configurations/${selectedConfig?.id}/rules`] });
+    queryClient.invalidateQueries({ queryKey: [`/api/configurations/${selectedConfig?.id}/export`] });
   };
 
   const handleDeleteRule = async (ruleId: number) => {
@@ -250,52 +210,46 @@ export default function Home() {
     }
   };
 
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-
-  const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
-
-    if (!over || !selectedConfig || !rules) return;
-
-    if (active.id !== over.id) {
-      const oldIndex = rules.findIndex((rule) => rule.id.toString() === active.id);
-      const newIndex = rules.findIndex((rule) => rule.id.toString() === over.id);
-
-      const reorderedRules = arrayMove(rules, oldIndex, newIndex);
+  const handleDragEnd = async (result: any) => {
+    if (!result.destination || !selectedConfig || !rules) return;
+    
+    const sourceIndex = result.source.index;
+    const destinationIndex = result.destination.index;
+    
+    if (sourceIndex === destinationIndex) return;
+    
+    // Reorder rules array
+    const reorderedRules = Array.from(rules);
+    const [removed] = reorderedRules.splice(sourceIndex, 1);
+    reorderedRules.splice(destinationIndex, 0, removed);
+    
+    try {
+      const ruleIds = reorderedRules.map(rule => rule.id);
       
-      try {
-        const ruleIds = reorderedRules.map(rule => rule.id);
-        
-        const response = await fetch(`/api/configurations/${selectedConfig.id}/rules/reorder`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ruleIds })
-        });
-        
-        if (!response.ok) {
-          throw new Error('Failed to reorder rules');
-        }
-        
-        // Refresh the rules
-        queryClient.invalidateQueries({ queryKey: [`/api/configurations/${selectedConfig.id}/rules`] });
-        
-        toast({
-          title: "Rules Reordered",
-          description: "Rule order updated successfully"
-        });
-        
-      } catch (error) {
-        toast({
-          title: "Reorder Failed",
-          description: "Failed to reorder rules",
-          variant: "destructive"
-        });
+      const response = await fetch(`/api/configurations/${selectedConfig.id}/rules/reorder`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ruleIds })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to reorder rules');
       }
+      
+      // Refresh the rules
+      queryClient.invalidateQueries({ queryKey: [`/api/configurations/${selectedConfig.id}/rules`] });
+      
+      toast({
+        title: "Rules Reordered",
+        description: "Rule order updated successfully"
+      });
+      
+    } catch (error) {
+      toast({
+        title: "Reorder Failed",
+        description: "Failed to reorder rules",
+        variant: "destructive"
+      });
     }
   };
 
@@ -554,8 +508,30 @@ export default function Home() {
                                 Error loading rules: {rulesError?.message || 'Unknown error'}
                               </div>
                             ) : rules && rules.length > 0 ? (
-
-                      ) : selectedConfig ? (
+                              rules.map((rule, index) => (
+                                <Draggable key={rule.id} draggableId={rule.id.toString()} index={index}>
+                                  {(provided, snapshot) => (
+                                    <div
+                                      ref={provided.innerRef}
+                                      {...provided.draggableProps}
+                                      {...provided.dragHandleProps}
+                                      style={{
+                                        ...provided.draggableProps.style,
+                                        opacity: snapshot.isDragging ? 0.8 : 1,
+                                      }}
+                                    >
+                                      <RuleCard
+                                        rule={rule}
+                                        onEdit={() => handleEditRule(rule)}
+                                        onDelete={() => handleDeleteRule(rule.id)}
+                                        isRecommended={recommendedRuleIds.has(rule.id)}
+                                        isSessionEdit={sessionRuleIds.has(rule.id)}
+                                      />
+                                    </div>
+                                  )}
+                                </Draggable>
+                              ))
+                            ) : selectedConfig ? (
                         <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors cursor-pointer" onClick={handleCreateRule}>
                           <Plus className="mx-auto text-slate-400 text-2xl mb-3 w-8 h-8" />
                           <h3 className="text-lg font-medium text-slate-600 mb-1">No Rules Found</h3>
