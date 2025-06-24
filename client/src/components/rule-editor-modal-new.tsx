@@ -7,17 +7,12 @@ import { useToast } from "@/hooks/use-toast";
 import { type Rule } from "@shared/schema";
 import Editor from "@monaco-editor/react";
 
-// Suppress ResizeObserver errors that don't affect functionality
+// Prevent ResizeObserver errors
 const originalError = console.error;
-if (typeof window !== 'undefined') {
-  console.error = (...args) => {
-    if (typeof args[0] === 'string' && (
-      args[0].includes('ResizeObserver') || 
-      args[0].includes('defaultProps')
-    )) return;
-    originalError(...args);
-  };
-}
+console.error = (...args) => {
+  if (args[0]?.includes?.('ResizeObserver')) return;
+  originalError(...args);
+};
 
 interface RuleEditorModalProps {
   rule: Rule | null;
@@ -30,7 +25,6 @@ export default function RuleEditorModal({ rule, configurationId, onClose, onSave
   const [jsonContent, setJsonContent] = useState("");
   const [jsonError, setJsonError] = useState("");
   const { toast } = useToast();
-  const [isEditorReady, setIsEditorReady] = useState(false);
 
   useEffect(() => {
     if (rule) {

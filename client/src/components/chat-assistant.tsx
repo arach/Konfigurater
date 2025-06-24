@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { MessageCircle, Send, Loader2, Copy, Trash2 } from "lucide-react";
-import { type Rule, type Configuration } from "@shared/schema";
+import { type Rule } from "@shared/schema";
 import { useMutation } from "@tanstack/react-query";
 
 import { useToast } from "@/hooks/use-toast";

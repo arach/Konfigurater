@@ -19,46 +19,50 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ 
-  karabinerConfig,
-  configName,
-  onConfigLoad,
+  configurations, 
+  selectedConfig, 
+  rules, 
+  isLoading, 
+  onConfigSelect, 
   onCreateRule 
 }: SidebarProps) {
   const [isDragging, setIsDragging] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // No mutation needed - just load config directly into state
+  const importMutation = useMutation({
+    mutationFn: async (data: { name: string; karabinerJson: any }) => {
+      const response = await apiRequest("POST", "/api/configurations/import", data);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/configurations"] });
+      onConfigSelect(data.config);
+      toast({
+        title: "Configuration imported successfully",
+        description: `Imported ${data.rules.length} rules`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Import failed",
+        description: error.message || "Failed to import configuration",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleFileUpload = async (file: File) => {
-    console.log('📁 File upload started:', file.name);
-    
     try {
       const text = await file.text();
       const karabinerJson = JSON.parse(text);
       const name = file.name.replace(/\.json$/, "");
       
-      console.log('✅ JSON loaded successfully');
-      console.log('📋 Structure:', {
-        hasProfiles: !!karabinerJson.profiles,
-        hasRules: !!karabinerJson.rules,
-        topLevelKeys: Object.keys(karabinerJson)
-      });
-      
-      // Load directly into editor state
-      onConfigLoad(karabinerJson, name);
-      
-      toast({
-        title: "Configuration loaded",
-        description: `Loaded ${name} for editing`,
-      });
-      
+      importMutation.mutate({ name, karabinerJson });
     } catch (error) {
-      console.error('❌ File upload error:', error);
-      
       toast({
         title: "Invalid file",
-        description: `Parse error: ${error instanceof Error ? error.message : 'Please upload a valid JSON file'}`,
+        description: "Please upload a valid JSON file",
         variant: "destructive",
       });
     }
