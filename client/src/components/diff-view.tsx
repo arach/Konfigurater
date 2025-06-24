@@ -11,16 +11,13 @@ interface DiffViewProps {
 export default function DiffView({ originalRules, newRules, recommendedRuleIds, sessionRuleIds }: DiffViewProps) {
   // Create proper Karabiner JSON structures
   const createKarabinerJson = () => {
-    const originalKarabinerRules = originalRules.map(rule => ({
-      description: rule.description,
-      manipulators: [{
-        type: rule.type,
-        from: rule.fromKey,
-        to: rule.toActions,
-        ...(rule.conditions && { conditions: rule.conditions })
-      }]
-    }));
+    // Original should always be empty baseline (no rules initially)
+    const originalConfig = {
+      title: "Karabiner Configuration",
+      rules: []
+    };
 
+    // All current rules are additions from the baseline
     const newKarabinerRules = newRules.map(rule => ({
       description: rule.description,
       manipulators: [{
@@ -29,14 +26,9 @@ export default function DiffView({ originalRules, newRules, recommendedRuleIds, 
         to: rule.toActions,
         ...(rule.conditions && { conditions: rule.conditions })
       }],
-      _isNew: recommendedRuleIds.has(rule.id) || sessionRuleIds.has(rule.id),
-      _source: recommendedRuleIds.has(rule.id) ? 'ai' : sessionRuleIds.has(rule.id) ? 'manual' : 'original'
+      _isNew: true, // All rules are new additions
+      _source: recommendedRuleIds.has(rule.id) ? 'ai' : 'imported'
     }));
-
-    const originalConfig = {
-      title: "Karabiner Configuration",
-      rules: originalKarabinerRules
-    };
 
     const modifiedConfig = {
       title: "Karabiner Configuration", 
@@ -158,7 +150,7 @@ export default function DiffView({ originalRules, newRules, recommendedRuleIds, 
         </div>
         <div className="flex items-center space-x-2">
           <div className="w-3 h-1 bg-green-500"></div>
-          <span>Manual Addition</span>
+          <span>Imported/Manual Addition</span>
         </div>
       </div>
     </div>

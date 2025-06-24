@@ -83,10 +83,10 @@ export default function Home() {
 
   const handleConfigSelect = (config: Configuration) => {
     setSelectedConfig(config);
-    // Reset tracking when switching configurations
+    // Reset tracking when switching configurations but keep original empty
     setSessionRuleIds(new Set());
     setRecommendedRuleIds(new Set());
-    setOriginalRules([]);
+    setOriginalRules([]); // Always start with empty baseline
   };
 
   const handleEditRule = (rule: Rule) => {
