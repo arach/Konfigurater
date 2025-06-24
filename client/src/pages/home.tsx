@@ -265,6 +265,9 @@ export default function Home() {
             description: `Successfully added: ${newRule.description}`
           });
           
+          // Track as session rule (manually added via chat)
+          setSessionRuleIds(prev => new Set(Array.from(prev).concat(createdRule.id)));
+          
           // Refresh the rules
           queryClient.invalidateQueries({ queryKey: [`/api/configurations/${selectedConfig.id}/rules`] });
           queryClient.invalidateQueries({ queryKey: ["/api/configurations"] });

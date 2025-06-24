@@ -124,6 +124,7 @@ Changelog:
 - June 24, 2025. Enhanced chat context with existing configuration data, device identifiers, and conflict avoidance
 - June 24, 2025. Added full configuration context to chat - now sends both original and current JSON to ChatGPT for troubleshooting
 - June 24, 2025. Added "Add Rule" button to chat JSON code blocks - users can directly import rule configurations from ChatGPT responses
+- June 24, 2025. Fixed diff view tracking to properly distinguish between original imported rules and session modifications
 ```
 
 ## User Preferences
