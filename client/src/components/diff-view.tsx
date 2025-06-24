@@ -9,51 +9,47 @@ interface DiffViewProps {
 }
 
 export default function DiffView({ originalRules, newRules, recommendedRuleIds, sessionRuleIds }: DiffViewProps) {
-  // Create a diff representation
-  const createDiff = () => {
-    const addedRules = newRules.filter(rule => 
-      recommendedRuleIds.has(rule.id) || sessionRuleIds.has(rule.id)
-    );
+  // Create proper Karabiner JSON structures
+  const createKarabinerJson = () => {
+    const originalKarabinerRules = originalRules.map(rule => ({
+      description: rule.description,
+      manipulators: [{
+        type: rule.type,
+        from: rule.fromKey,
+        to: rule.toActions,
+        ...(rule.conditions && { conditions: rule.conditions })
+      }]
+    }));
+
+    const newKarabinerRules = newRules.map(rule => ({
+      description: rule.description,
+      manipulators: [{
+        type: rule.type,
+        from: rule.fromKey,
+        to: rule.toActions,
+        ...(rule.conditions && { conditions: rule.conditions })
+      }],
+      _isNew: recommendedRuleIds.has(rule.id) || sessionRuleIds.has(rule.id),
+      _source: recommendedRuleIds.has(rule.id) ? 'ai' : sessionRuleIds.has(rule.id) ? 'manual' : 'original'
+    }));
 
     const originalConfig = {
-      title: "Original Configuration",
-      rules: originalRules.filter(rule => 
-        !recommendedRuleIds.has(rule.id) && !sessionRuleIds.has(rule.id)
-      ).map(rule => ({
-        description: rule.description,
-        manipulators: [{
-          type: rule.type,
-          from: rule.fromKey,
-          to: rule.toActions,
-          conditions: rule.conditions || undefined
-        }]
-      }))
+      title: "Karabiner Configuration",
+      rules: originalKarabinerRules
     };
 
     const modifiedConfig = {
-      title: "Modified Configuration", 
-      rules: [
-        ...originalConfig.rules,
-        ...addedRules.map(rule => ({
-          description: rule.description,
-          manipulators: [{
-            type: rule.type,
-            from: rule.fromKey,
-            to: rule.toActions,
-            conditions: rule.conditions || undefined
-          }],
-          _isNew: true,
-          _source: recommendedRuleIds.has(rule.id) ? 'ai' : 'manual'
-        }))
-      ]
+      title: "Karabiner Configuration", 
+      rules: newKarabinerRules
     };
 
-    return { originalConfig, modifiedConfig, addedRules };
+    return { originalConfig, modifiedConfig };
   };
 
-  const { originalConfig, modifiedConfig, addedRules } = createDiff();
+  const { originalConfig, modifiedConfig } = createKarabinerJson();
+  const addedRulesCount = recommendedRuleIds.size + sessionRuleIds.size;
 
-  if (addedRules.length === 0) {
+  if (addedRulesCount === 0) {
     return (
       <div className="text-center py-12 text-slate-500">
         <div className="w-16 h-16 bg-slate-100 rounded-lg flex items-center justify-center mx-auto mb-4">
@@ -70,20 +66,21 @@ export default function DiffView({ originalRules, newRules, recommendedRuleIds, 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between mb-4">
-        <h4 className="text-md font-medium text-slate-700">Configuration Diff</h4>
+        <h4 className="text-md font-medium text-slate-700">Karabiner JSON Diff</h4>
         <div className="flex items-center space-x-4 text-xs">
           <div className="flex items-center space-x-1">
             <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-            <span className="text-slate-600">Added ({addedRules.length})</span>
+            <span className="text-slate-600">+{addedRulesCount} rules</span>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4 max-h-96 overflow-hidden">
-        {/* Original Configuration */}
+        {/* Original Karabiner JSON */}
         <div className="bg-slate-50 rounded-lg border">
-          <div className="bg-slate-100 px-4 py-2 border-b text-sm font-medium text-slate-700">
-            Before ({originalConfig.rules.length} rules)
+          <div className="bg-slate-100 px-4 py-2 border-b text-sm font-medium text-slate-700 flex items-center">
+            <span className="text-red-600 mr-2">−</span>
+            Original ({originalConfig.rules.length} rules)
           </div>
           <div className="p-4 overflow-auto max-h-80">
             <pre className="text-xs font-mono text-slate-700 leading-relaxed">
@@ -92,49 +89,63 @@ export default function DiffView({ originalRules, newRules, recommendedRuleIds, 
           </div>
         </div>
 
-        {/* Modified Configuration */}
+        {/* Modified Karabiner JSON with highlights */}
         <div className="bg-slate-50 rounded-lg border">
-          <div className="bg-slate-100 px-4 py-2 border-b text-sm font-medium text-slate-700">
-            After ({modifiedConfig.rules.length} rules)
+          <div className="bg-slate-100 px-4 py-2 border-b text-sm font-medium text-slate-700 flex items-center">
+            <span className="text-green-600 mr-2">+</span>
+            Modified ({modifiedConfig.rules.length} rules)
           </div>
           <div className="p-4 overflow-auto max-h-80">
-            <pre className="text-xs font-mono leading-relaxed">
+            <div className="text-xs font-mono leading-relaxed">
+              <div className="text-slate-600">{"{"}</div>
+              <div className="text-slate-600 ml-2">"title": "Karabiner Configuration",</div>
+              <div className="text-slate-600 ml-2">"rules": [</div>
+              
               {modifiedConfig.rules.map((rule, index) => {
                 const isNew = (rule as any)._isNew;
                 const source = (rule as any)._source;
-                const ruleJson = JSON.stringify(
-                  {
-                    description: rule.description,
-                    manipulators: rule.manipulators
-                  }, 
-                  null, 
-                  2
-                );
-
+                
+                // Clean rule object for JSON display
+                const cleanRule = {
+                  description: rule.description,
+                  manipulators: rule.manipulators
+                };
+                
+                const ruleLines = JSON.stringify(cleanRule, null, 2).split('\n');
+                
                 return (
-                  <div 
-                    key={index}
-                    className={isNew ? (
-                      source === 'ai' 
-                        ? 'bg-purple-100 border-l-4 border-purple-500 pl-2 mb-2 rounded' 
-                        : 'bg-green-100 border-l-4 border-green-500 pl-2 mb-2 rounded'
-                    ) : ''}
-                  >
-                    <span className={isNew ? 'text-slate-800' : 'text-slate-600'}>
-                      {ruleJson}
-                      {index < modifiedConfig.rules.length - 1 && ','}
-                    </span>
-                    {isNew && (
-                      <div className="text-xs mt-1 font-normal">
-                        <span className={source === 'ai' ? 'text-purple-600' : 'text-green-600'}>
-                          + {source === 'ai' ? 'AI Recommendation' : 'Manual Edit'}
+                  <div key={index} className="ml-4">
+                    {ruleLines.map((line, lineIndex) => (
+                      <div 
+                        key={lineIndex}
+                        className={isNew ? (
+                          source === 'ai' 
+                            ? 'bg-purple-100 border-l-2 border-purple-500 pl-2' 
+                            : 'bg-green-100 border-l-2 border-green-500 pl-2'
+                        ) : ''}
+                      >
+                        <span className={isNew ? 'text-slate-800' : 'text-slate-600'}>
+                          {isNew && lineIndex === 0 && <span className="text-green-600 mr-1">+</span>}
+                          {line}
                         </span>
+                      </div>
+                    ))}
+                    {index < modifiedConfig.rules.length - 1 && (
+                      <div className={isNew ? (
+                        source === 'ai' 
+                          ? 'bg-purple-100 border-l-2 border-purple-500 pl-2' 
+                          : 'bg-green-100 border-l-2 border-green-500 pl-2'
+                      ) : ''}>
+                        <span className="text-slate-600">,</span>
                       </div>
                     )}
                   </div>
                 );
               })}
-            </pre>
+              
+              <div className="text-slate-600 ml-2">]</div>
+              <div className="text-slate-600">{"}"}</div>
+            </div>
           </div>
         </div>
       </div>
