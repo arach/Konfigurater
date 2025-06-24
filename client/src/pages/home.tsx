@@ -194,11 +194,21 @@ export default function Home() {
     }
   };
 
-  const handleReorderRules = async (newOrder: Rule[]) => {
-    if (!selectedConfig) return;
+  const handleDragEnd = async (result: any) => {
+    if (!result.destination || !selectedConfig || !rules) return;
+    
+    const sourceIndex = result.source.index;
+    const destinationIndex = result.destination.index;
+    
+    if (sourceIndex === destinationIndex) return;
+    
+    // Reorder rules array
+    const reorderedRules = Array.from(rules);
+    const [removed] = reorderedRules.splice(sourceIndex, 1);
+    reorderedRules.splice(destinationIndex, 0, removed);
     
     try {
-      const ruleIds = newOrder.map(rule => rule.id);
+      const ruleIds = reorderedRules.map(rule => rule.id);
       
       const response = await fetch(`/api/configurations/${selectedConfig.id}/rules/reorder`, {
         method: 'POST',
@@ -212,6 +222,11 @@ export default function Home() {
       
       // Refresh the rules
       queryClient.invalidateQueries({ queryKey: [`/api/configurations/${selectedConfig.id}/rules`] });
+      
+      toast({
+        title: "Rules Reordered",
+        description: "Rule order updated successfully"
+      });
       
     } catch (error) {
       toast({
