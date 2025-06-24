@@ -166,6 +166,34 @@ export default function Home() {
     handleCloseRuleEditor();
   };
 
+  const handleChatCreateRule = (suggestion: any) => {
+    const keyParts = suggestion.combination.split('+');
+    const keyCode = keyParts.pop();
+    const modifiers = keyParts;
+
+    const rule = {
+      description: suggestion.description,
+      type: 'basic',
+      fromKey: {
+        key_code: keyCode,
+        modifiers: modifiers.length > 0 ? { mandatory: modifiers } : undefined
+      },
+      toActions: [{
+        shell_command: `# Configure action for ${suggestion.description}`
+      }],
+      conditions: [{
+        type: "device_if",
+        identifiers: [{
+          vendor_id: 12625,
+          product_id: 16400
+        }]
+      }]
+    };
+
+    setEditingRule(rule as any);
+    setIsCreatingRule(true);
+  };
+
   const generateJsonPreview = () => {
     if (!selectedConfig || !rules) return "{}";
     
@@ -471,6 +499,11 @@ export default function Home() {
           onClose={() => setShowValidation(false)}
         />
       )}
+
+      <ChatAssistant 
+        rules={rules || []}
+        onCreateRule={handleChatCreateRule}
+      />
     </div>
   );
 }

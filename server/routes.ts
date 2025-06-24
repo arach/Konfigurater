@@ -366,6 +366,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Chat assistant endpoint
+  app.post("/api/chat/suggest-keys", async (req, res) => {
+    try {
+      const { message, rules } = req.body;
+      
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(200).json({ 
+          response: "I need an OpenAI API key to provide intelligent suggestions. Please set up the OPENAI_API_KEY in your environment variables.",
+          suggestions: generateBasicDOIOSuggestions(message)
+        });
+      }
+
+      // Analyze existing key combinations
+      const usedCombinations = rules.map((rule: any) => {
+        const from = rule.fromKey;
+        if (from?.key_code) {
+          const modifiers = from.modifiers?.mandatory || [];
+          return modifiers.length > 0 
+            ? `${modifiers.join('+')}+${from.key_code}`
+            : from.key_code;
+        }
+        return null;
+      }).filter(Boolean);
+
+      const suggestions = generateBasicDOIOSuggestions(message, usedCombinations);
+      const response = `Based on your current ${rules.length} rules, I found ${usedCombinations.length} key combinations in use. Here are some available DOIO mappings for "${message}":`;
+
+      res.json({ response, suggestions });
+    } catch (error) {
+      console.error('Chat error:', error);
+      res.status(500).json({ 
+        response: "Sorry, I encountered an error while analyzing your configuration. Please try again.",
+        suggestions: []
+      });
+    }
+  });
+
+  function generateBasicDOIOSuggestions(message: string, usedCombinations: string[] = []) {
+    const messageLower = message.toLowerCase();
+    const suggestions = [];
+    const availableFKeys = ['f13', 'f14', 'f15', 'f16', 'f17', 'f18'].filter(key => 
+      !usedCombinations.some(combo => combo.includes(key))
+    );
+
+    if (messageLower.includes('screenshot') || messageLower.includes('capture')) {
+      suggestions.push({
+        combination: `cmd+shift+${availableFKeys[0] || 'f13'}`,
+        description: 'Screenshot with DOIO macro',
+        reasoning: 'F-keys work well for screenshot tools, avoiding standard shortcut conflicts'
+      });
+    }
+
+    if (messageLower.includes('raycast') || messageLower.includes('launcher')) {
+      suggestions.push({
+        combination: `cmd+${availableFKeys[1] || 'f14'}`,
+        description: 'Quick launcher activation',
+        reasoning: 'Single modifier with F-key provides fast access'
+      });
+    }
+
+    if (messageLower.includes('password') || messageLower.includes('1password')) {
+      suggestions.push({
+        combination: `cmd+opt+${availableFKeys[2] || 'f15'}`,
+        description: 'Password manager quick access',
+        reasoning: 'Double modifier prevents accidental activation'
+      });
+    }
+
+    // Generic suggestions
+    if (suggestions.length === 0) {
+      availableFKeys.slice(0, 3).forEach((key, index) => {
+        const modifiers = index === 0 ? 'cmd' : index === 1 ? 'cmd+shift' : 'cmd+opt';
+        suggestions.push({
+          combination: `${modifiers}+${key}`,
+          description: `DOIO macro button ${index + 1}`,
+          reasoning: `${key.toUpperCase()} is available and unused in your configuration`
+        });
+      });
+    }
+
+    return suggestions.slice(0, 3);
+  }
+
   const httpServer = createServer(app);
   return httpServer;
 }
