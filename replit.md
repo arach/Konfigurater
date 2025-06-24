@@ -113,6 +113,7 @@ Changelog:
 - June 24, 2025. Fixed tab layout alignment issues - all content areas now properly contained within viewport height
 - June 24, 2025. Enhanced Changes tab with JSON diff view showing structured changes and rule metadata
 - June 24, 2025. Implemented Git-style side-by-side diff view with before/after comparison and highlighted additions
+- June 24, 2025. Added development auto-import feature to automatically load Karabiner configuration on startup
 ```
 
 ## User Preferences

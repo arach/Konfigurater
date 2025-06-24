@@ -28,6 +28,59 @@ function findDuplicateConfiguration(existingConfigs: Configuration[], newRules: 
   return null;
 }
 
+// Auto-import dev data in development mode
+async function autoImportDevData() {
+  if (process.env.NODE_ENV !== 'development') return;
+  
+  try {
+    const devDataPath = path.join(process.cwd(), 'server', 'dev-data.json');
+    if (fs.existsSync(devDataPath)) {
+      const configs = await storage.getAllConfigurations();
+      
+      // Only auto-import if no configurations exist
+      if (configs.length === 0) {
+        console.log('🔧 Auto-importing dev configuration...');
+        const devData = JSON.parse(fs.readFileSync(devDataPath, 'utf8'));
+        // Parse the Karabiner configuration
+        const profileRules = devData.profiles?.[0]?.complex_modifications?.rules || [];
+        const title = devData.profiles?.[0]?.name || "Default profile";
+        
+        const rules = profileRules.map((rule: any) => ({
+          description: rule.description,
+          type: 'basic',
+          from: rule.manipulators?.[0]?.from || {},
+          to: rule.manipulators?.[0]?.to || [],
+          conditions: rule.manipulators?.[0]?.conditions || null
+        }));
+        
+        const config = await storage.createConfiguration({
+          name: title,
+          data: devData
+        });
+        
+        // Import rules
+        let order = 0;
+        for (const rule of rules) {
+          await storage.createRule({
+            configurationId: config.id,
+            description: rule.description,
+            type: rule.type || 'basic',
+            fromKey: rule.from || {},
+            toActions: rule.to || [],
+            conditions: rule.conditions || null,
+            enabled: true,
+            order: order++
+          });
+        }
+        
+        console.log(`✅ Auto-imported configuration "${title}" with ${rules.length} rules`);
+      }
+    }
+  } catch (error) {
+    console.warn('⚠️  Failed to auto-import dev data:', (error as Error).message);
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Configuration routes
   app.get("/api/configurations", async (req, res) => {
