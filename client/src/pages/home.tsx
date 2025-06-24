@@ -6,6 +6,7 @@ import RuleCard from "@/components/rule-card";
 import RuleEditorModal from "@/components/rule-editor-modal";
 import ValidationPanel from "@/components/validation-panel";
 import SmartRecommendations from "@/components/smart-recommendations";
+import DiffView from "@/components/diff-view";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus } from "lucide-react";
@@ -22,6 +23,7 @@ export default function Home() {
   const [isLoadingExport, setIsLoadingExport] = useState(false);
   const [sessionRuleIds, setSessionRuleIds] = useState<Set<number>>(new Set());
   const [recommendedRuleIds, setRecommendedRuleIds] = useState<Set<number>>(new Set());
+  const [originalRules, setOriginalRules] = useState<Rule[]>([]);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -81,6 +83,10 @@ export default function Home() {
 
   const handleConfigSelect = (config: Configuration) => {
     setSelectedConfig(config);
+    // Reset tracking when switching configurations
+    setSessionRuleIds(new Set());
+    setRecommendedRuleIds(new Set());
+    setOriginalRules([]);
   };
 
   const handleEditRule = (rule: Rule) => {
@@ -361,47 +367,13 @@ export default function Home() {
                         </div>
                       </div>
 
-                      {/* JSON Diff View */}
-                      {(recommendedRuleIds.size > 0 || sessionRuleIds.size > 0) && (
-                        <div className="mb-6">
-                          <h4 className="text-md font-medium text-slate-700 mb-3">JSON Changes</h4>
-                          <div className="bg-slate-900 rounded-lg p-4 max-h-80 overflow-auto">
-                            <pre className="text-sm text-green-400 font-mono leading-relaxed">
-                              {JSON.stringify({
-                                "new_rules_added": [
-                                  ...Array.from(recommendedRuleIds).map(id => {
-                                    const rule = rules?.find(r => r.id === id);
-                                    return rule ? {
-                                      description: rule.description,
-                                      type: rule.type,
-                                      source: "ai_recommendation",
-                                      from: rule.fromKey,
-                                      to: rule.toActions,
-                                      conditions: rule.conditions || null
-                                    } : null;
-                                  }).filter(Boolean),
-                                  ...Array.from(sessionRuleIds).map(id => {
-                                    const rule = rules?.find(r => r.id === id);
-                                    return rule ? {
-                                      description: rule.description,
-                                      type: rule.type,
-                                      source: "manual_edit",
-                                      from: rule.fromKey,
-                                      to: rule.toActions,
-                                      conditions: rule.conditions || null
-                                    } : null;
-                                  }).filter(Boolean)
-                                ],
-                                "summary": {
-                                  "ai_recommendations": recommendedRuleIds.size,
-                                  "manual_edits": sessionRuleIds.size,
-                                  "total_new_rules": recommendedRuleIds.size + sessionRuleIds.size
-                                }
-                              }, null, 2)}
-                            </pre>
-                          </div>
-                        </div>
-                      )}
+                      {/* Git-style Diff View */}
+                      <DiffView
+                        originalRules={originalRules}
+                        newRules={rules || []}
+                        recommendedRuleIds={recommendedRuleIds}
+                        sessionRuleIds={sessionRuleIds}
+                      />
 
                       {recommendedRuleIds.size === 0 && sessionRuleIds.size === 0 ? (
                         <div className="text-center py-12 text-slate-500">
