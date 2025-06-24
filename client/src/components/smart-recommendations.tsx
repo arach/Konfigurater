@@ -9,6 +9,7 @@ interface SmartRecommendationsProps {
   configuration: Configuration | null;
   rules: Rule[];
   onCreateRule: (suggestion: RuleSuggestion) => void;
+  isCreating?: boolean;
 }
 
 interface RuleSuggestion {
@@ -38,7 +39,8 @@ interface DeviceAnalysis {
 export default function SmartRecommendations({ 
   configuration, 
   rules, 
-  onCreateRule 
+  onCreateRule,
+  isCreating = false
 }: SmartRecommendationsProps) {
   const [suggestions, setSuggestions] = useState<RuleSuggestion[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -480,10 +482,11 @@ export default function SmartRecommendations({
                 <Button 
                   size="sm" 
                   onClick={() => onCreateRule(suggestion)}
+                  disabled={isCreating}
                   className="shrink-0"
                 >
                   <Plus className="w-4 h-4 mr-1" />
-                  Add
+                  {isCreating ? "Adding..." : "Add"}
                 </Button>
               </div>
             </div>

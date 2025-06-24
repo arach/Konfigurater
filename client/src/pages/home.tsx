@@ -9,6 +9,8 @@ import SmartRecommendations from "@/components/smart-recommendations";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { type Configuration, type Rule } from "@shared/schema";
 
 export default function Home() {
@@ -18,6 +20,9 @@ export default function Home() {
   const [showValidation, setShowValidation] = useState(false);
   const [exportJsonData, setExportJsonData] = useState<any>(null);
   const [isLoadingExport, setIsLoadingExport] = useState(false);
+  
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: configurations, isLoading: isLoadingConfigs } = useQuery<Configuration[]>({
     queryKey: ["/api/configurations"],
@@ -80,37 +85,53 @@ export default function Home() {
     setEditingRule(rule);
   };
 
-  const handleCreateRuleFromSuggestion = (suggestion: any) => {
-    // Convert suggestion pattern to rule format
-    const newRule = {
-      configurationId: selectedConfig!.id,
-      description: suggestion.title,
-      type: "basic",
-      fromKey: suggestion.pattern.from,
-      toActions: suggestion.pattern.to,
-      conditions: suggestion.pattern.conditions || null,
-      enabled: true
-    };
-    
-    // Create the rule via API
-    const createRule = async () => {
-      try {
-        const response = await fetch(`/api/configurations/${selectedConfig!.id}/rules`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newRule)
-        });
-        
-        if (response.ok) {
-          // Refresh rules data
-          window.location.reload();
-        }
-      } catch (error) {
-        console.error('Failed to create rule from suggestion:', error);
+  // Mutation for creating rules from suggestions
+  const createRuleMutation = useMutation({
+    mutationFn: async (suggestion: any) => {
+      const newRule = {
+        configurationId: selectedConfig!.id,
+        description: suggestion.title,
+        type: "basic",
+        fromKey: suggestion.pattern.from,
+        toActions: suggestion.pattern.to,
+        conditions: suggestion.pattern.conditions || null,
+        enabled: true
+      };
+      
+      const response = await fetch(`/api/configurations/${selectedConfig!.id}/rules`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newRule)
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to create rule: ${errorText}`);
       }
-    };
-    
-    createRule();
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Rule Added",
+        description: "Smart recommendation successfully added to your configuration",
+      });
+      
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: [`/api/configurations/${selectedConfig?.id}/rules`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/configurations"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: `Failed to add rule: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleCreateRuleFromSuggestion = (suggestion: any) => {
+    createRuleMutation.mutate(suggestion);
   };
 
   const handleCreateRule = () => {
@@ -306,6 +327,7 @@ export default function Home() {
                       configuration={selectedConfig}
                       rules={rules || []}
                       onCreateRule={handleCreateRuleFromSuggestion}
+                      isCreating={createRuleMutation.isPending}
                     />
                   </TabsContent>
                 </Tabs>
