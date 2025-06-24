@@ -373,13 +373,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log('Checking OPENAI_API_KEY:', process.env.OPENAI_API_KEY ? 'Present' : 'Missing');
       
-      if (!process.env.OPENAI_API_KEY) {
-        return res.status(200).json({ 
-          response: "No OpenAI API key found. Using basic suggestions mode.",
-          suggestions: generateBasicDOIOSuggestions(message, usedCombinations, conversationHistory)
-        });
-      }
-
       // Analyze existing key combinations
       const usedCombinations = rules.map((rule: any) => {
         const from = rule.fromKey;
@@ -393,17 +386,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }).filter(Boolean);
 
       console.log('Used combinations:', usedCombinations);
-      const suggestions = generateBasicDOIOSuggestions(message, usedCombinations, conversationHistory);
       
-      // Generate contextual response based on conversation history
-      let response;
-      if (conversationHistory.length > 2) {
-        response = `Here are more suggestions:`;
-      } else {
-        response = `Found ${usedCombinations.length} used combinations. Available DOIO mappings:`;
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(200).json({ 
+          response: "No OpenAI API key found. Using basic suggestions mode.",
+          suggestions: generateBasicDOIOSuggestions(message, usedCombinations, conversationHistory)
+        });
       }
 
-      res.json({ response, suggestions });
+      // Use OpenAI for intelligent responses
+      try {
+        const { default: OpenAI } = await import('openai');
+        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+        const systemPrompt = `You are a keyboard shortcut expert specializing in DOIO devices and Karabiner-Elements. 
+        
+Current configuration has ${rules.length} rules using these combinations: ${usedCombinations.join(', ')}
+
+Available F-keys for DOIO: f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24
+
+Your task: Suggest 2-3 unused key combinations for DOIO devices. Respond with JSON in this format:
+{
+  "response": "Brief explanation",
+  "suggestions": [
+    {
+      "combination": "cmd+f13",
+      "description": "Brief action description", 
+      "reasoning": "Why this combo works"
+    }
+  ]
+}
+
+Prefer F-keys with modifiers. Avoid used combinations.`;
+
+        const response = await openai.chat.completions.create({
+          model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+          messages: [
+            { role: "system", content: systemPrompt },
+            ...conversationHistory.slice(-6).map(msg => ({
+              role: msg.role as "user" | "assistant",
+              content: msg.content
+            })),
+            { role: "user", content: message }
+          ],
+          response_format: { type: "json_object" },
+          max_tokens: 800,
+          temperature: 0.7
+        });
+
+        const result = JSON.parse(response.choices[0].message.content || '{}');
+        console.log('OpenAI response:', result);
+        
+        res.json(result);
+      } catch (openaiError) {
+        console.error('OpenAI error:', openaiError);
+        // Fallback to basic suggestions
+        const suggestions = generateBasicDOIOSuggestions(message, usedCombinations, conversationHistory);
+        res.json({ 
+          response: "OpenAI error, using basic suggestions.",
+          suggestions 
+        });
+      }
     } catch (error) {
       console.error('Chat error:', error);
       res.status(500).json({ 
