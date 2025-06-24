@@ -8,11 +8,13 @@ import { type Rule } from "@shared/schema";
 import Editor from "@monaco-editor/react";
 
 // Prevent ResizeObserver errors
-const originalError = console.error;
-console.error = (...args) => {
-  if (args[0]?.includes?.('ResizeObserver')) return;
-  originalError(...args);
-};
+if (typeof window !== 'undefined') {
+  const originalError = console.error;
+  console.error = (...args) => {
+    if (typeof args[0] === 'string' && args[0].includes('ResizeObserver')) return;
+    originalError(...args);
+  };
+}
 
 interface RuleEditorModalProps {
   rule: Rule | null;
