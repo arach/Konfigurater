@@ -119,6 +119,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/configurations/:id/rules", async (req, res) => {
+    try {
+      const configurationId = parseInt(req.params.id);
+      const ruleData = { ...req.body, configurationId };
+      const validatedData = insertRuleSchema.parse(ruleData);
+      const rule = await storage.createRule(validatedData);
+      res.status(201).json(rule);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create rule" });
+    }
+  });
+
   app.put("/api/rules/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
