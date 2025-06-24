@@ -7,6 +7,13 @@ import { useToast } from "@/hooks/use-toast";
 import { type Rule } from "@shared/schema";
 import Editor from "@monaco-editor/react";
 
+// Prevent ResizeObserver errors
+const originalError = console.error;
+console.error = (...args) => {
+  if (args[0]?.includes?.('ResizeObserver')) return;
+  originalError(...args);
+};
+
 interface RuleEditorModalProps {
   rule: Rule | null;
   configurationId?: number;
