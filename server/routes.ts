@@ -499,9 +499,15 @@ Always respond with JSON:
           }
         }
         
-        // Ensure suggestions array exists
+        // Ensure suggestions array exists and response is a string
         if (!result.suggestions) {
           result.suggestions = [];
+        }
+        
+        // Fix response format if it's not a string
+        if (typeof result.response !== 'string') {
+          console.warn('Response is not a string:', typeof result.response);
+          result.response = "I received your message and analyzed your configuration. How can I help you with your Karabiner setup?";
         }
         
         res.json(result);
