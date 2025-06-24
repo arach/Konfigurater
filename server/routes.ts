@@ -371,10 +371,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { message, rules, conversationHistory = [] } = req.body;
       
+      console.log('Checking OPENAI_API_KEY:', process.env.OPENAI_API_KEY ? 'Present' : 'Missing');
+      
       if (!process.env.OPENAI_API_KEY) {
         return res.status(200).json({ 
-          response: "I need an OpenAI API key to provide intelligent suggestions. Please set up the OPENAI_API_KEY in your environment variables.",
-          suggestions: generateBasicDOIOSuggestions(message)
+          response: "No OpenAI API key found. Using basic suggestions mode.",
+          suggestions: generateBasicDOIOSuggestions(message, usedCombinations, conversationHistory)
         });
       }
 
@@ -390,6 +392,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return null;
       }).filter(Boolean);
 
+      console.log('Used combinations:', usedCombinations);
       const suggestions = generateBasicDOIOSuggestions(message, usedCombinations, conversationHistory);
       
       // Generate contextual response based on conversation history
