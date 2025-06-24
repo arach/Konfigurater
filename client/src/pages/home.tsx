@@ -194,6 +194,34 @@ export default function Home() {
     setIsCreatingRule(true);
   };
 
+  const handleCreateRuleFromJson = (jsonRule: any) => {
+    if (!selectedConfig) {
+      toast({
+        title: "No Configuration",
+        description: "Please select a configuration first",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Convert each manipulator to our rule format
+    const manipulators = jsonRule.manipulators || [jsonRule];
+    
+    manipulators.forEach((manipulator: any, index: number) => {
+      const newRule = {
+        description: jsonRule.description || manipulator.description || "Chat-generated rule",
+        type: manipulator.type || "basic",
+        fromKey: manipulator.from || {},
+        toActions: manipulator.to || [],
+        conditions: manipulator.conditions || [],
+        order: (rules?.length || 0) + index + 1,
+        configurationId: selectedConfig.id
+      };
+      
+      createRuleMutation.mutate(newRule);
+    });
+  };
+
   const generateJsonPreview = () => {
     if (!selectedConfig || !rules) return "{}";
     
@@ -506,6 +534,7 @@ export default function Home() {
         exportJsonData={exportJsonData}
         originalConfiguration={selectedConfig?.data}
         onCreateRule={handleChatCreateRule}
+        onCreateRuleFromJson={handleCreateRuleFromJson}
       />
     </div>
   );

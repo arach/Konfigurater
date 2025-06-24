@@ -28,6 +28,7 @@ interface ChatAssistantProps {
   exportJsonData?: any;
   originalConfiguration?: any;
   onCreateRule?: (suggestion: KeySuggestion) => void;
+  onCreateRuleFromJson?: (jsonRule: any) => void;
 }
 
 export default function ChatAssistant({ 
@@ -35,7 +36,8 @@ export default function ChatAssistant({
   configuration, 
   exportJsonData, 
   originalConfiguration,
-  onCreateRule 
+  onCreateRule,
+  onCreateRuleFromJson
 }: ChatAssistantProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -232,12 +234,22 @@ export default function ChatAssistant({
                             <pre className="bg-slate-800 text-green-400 p-3 rounded text-xs overflow-x-auto font-mono">
                               <code>{code}</code>
                             </pre>
-                            <button
-                              onClick={() => handleCopyToClipboard(code)}
-                              className="absolute top-2 right-2 p-1 rounded bg-slate-700 hover:bg-slate-600 text-white text-xs"
-                            >
-                              Copy
-                            </button>
+                            <div className="absolute top-2 right-2 flex space-x-1">
+                              <button
+                                onClick={() => handleCopyToClipboard(code)}
+                                className="p-1 rounded bg-slate-700 hover:bg-slate-600 text-white text-xs"
+                              >
+                                Copy
+                              </button>
+                              {onCreateRuleFromJson && (code.includes('"manipulators"') || (code.includes('"type": "basic"') && code.includes('"from"'))) && (
+                                <button
+                                  onClick={() => handleCreateRuleFromJson(code)}
+                                  className="p-1 rounded bg-green-700 hover:bg-green-600 text-white text-xs"
+                                >
+                                  Add Rule
+                                </button>
+                              )}
+                            </div>
                           </div>
                         );
                       }
