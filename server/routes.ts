@@ -395,9 +395,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate contextual response based on conversation history
       let response;
       if (conversationHistory.length > 2) {
-        response = `I see you're continuing our conversation. Here are some more suggestions for "${message}":`;
+        response = `Here are more suggestions:`;
       } else {
-        response = `Based on your current ${rules.length} rules, I found ${usedCombinations.length} key combinations in use. Here are some available DOIO mappings for "${message}":`;
+        response = `Found ${usedCombinations.length} used combinations. Available DOIO mappings:`;
       }
 
       res.json({ response, suggestions });
@@ -420,24 +420,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (messageLower.includes('screenshot') || messageLower.includes('capture')) {
       suggestions.push({
         combination: `cmd+shift+${availableFKeys[0] || 'f13'}`,
-        description: 'Screenshot with DOIO macro',
-        reasoning: 'F-keys work well for screenshot tools, avoiding standard shortcut conflicts'
+        description: 'Screenshot tool',
+        reasoning: 'F-key avoids conflicts'
       });
     }
 
     if (messageLower.includes('raycast') || messageLower.includes('launcher')) {
       suggestions.push({
         combination: `cmd+${availableFKeys[1] || 'f14'}`,
-        description: 'Quick launcher activation',
-        reasoning: 'Single modifier with F-key provides fast access'
+        description: 'App launcher',
+        reasoning: 'Fast single modifier'
       });
     }
 
     if (messageLower.includes('password') || messageLower.includes('1password')) {
       suggestions.push({
         combination: `cmd+opt+${availableFKeys[2] || 'f15'}`,
-        description: 'Password manager quick access',
-        reasoning: 'Double modifier prevents accidental activation'
+        description: 'Password manager',
+        reasoning: 'Secure double modifier'
       });
     }
 
@@ -457,8 +457,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const modifiers = index === 0 ? 'cmd' : index === 1 ? 'cmd+shift' : 'cmd+opt';
         suggestions.push({
           combination: `${modifiers}+${key}`,
-          description: `DOIO macro button for ${messageLower}`,
-          reasoning: `${key.toUpperCase()} is available and not previously suggested`
+          description: `DOIO macro button`,
+          reasoning: `${key.toUpperCase()} available`
         });
       });
     }
@@ -470,8 +470,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (availableFKeys[index]) {
           suggestions.push({
             combination: `${mod}+${availableFKeys[index]}`,
-            description: `Alternative DOIO mapping`,
-            reasoning: `Different modifier combination for variety`
+            description: `Alternative mapping`,
+            reasoning: `Different modifier combo`
           });
         }
       });

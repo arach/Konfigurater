@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { MessageCircle, Send, Loader2, Copy } from 'lucide-react';
+import { MessageCircle, Send, Loader2, Copy, Trash2 } from 'lucide-react';
 import { type Rule } from '@shared/schema';
 import { useMutation } from '@tanstack/react-query';
 
@@ -134,6 +134,17 @@ export default function ChatAssistant({ rules, onCreateRule }: ChatAssistantProp
     }
   };
 
+  const clearChat = () => {
+    setMessages([
+      {
+        id: '1',
+        role: 'assistant',
+        content: "Hi! I'm your keyboard shortcut assistant. I can help you find available key combinations that aren't already used in your configuration. Just tell me what command or action you want to map, and I'll suggest some options!",
+        timestamp: new Date()
+      }
+    ]);
+  };
+
   if (!isOpen) {
     return (
       <Button
@@ -153,14 +164,25 @@ export default function ChatAssistant({ rules, onCreateRule }: ChatAssistantProp
           <MessageCircle className="w-4 h-4" />
           <h3 className="font-medium text-sm">Shortcut Assistant</h3>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setIsOpen(false)}
-          className="text-white hover:bg-blue-700 h-6 w-6 p-0 text-lg"
-        >
-          ×
-        </Button>
+        <div className="flex items-center space-x-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={clearChat}
+            className="text-white hover:bg-blue-700 h-6 w-6 p-0"
+            title="Clear chat"
+          >
+            <Trash2 className="w-3 h-3" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsOpen(false)}
+            className="text-white hover:bg-blue-700 h-6 w-6 p-0 text-lg"
+          >
+            ×
+          </Button>
+        </div>
       </div>
 
       <div className="flex-1 flex flex-col min-h-0">
@@ -204,7 +226,6 @@ export default function ChatAssistant({ rules, onCreateRule }: ChatAssistantProp
                             )}
                           </div>
                         </div>
-                        <p className="text-xs text-slate-600 mb-1">{suggestion.description}</p>
                         <p className="text-xs text-slate-500">{suggestion.reasoning}</p>
                       </div>
                     ))}
