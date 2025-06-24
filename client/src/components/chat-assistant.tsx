@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { MessageCircle, Send, Loader2, Copy } from 'lucide-react';
 import { type Rule } from '@shared/schema';
 import { useMutation } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
+
 import { useToast } from '@/hooks/use-toast';
 
 interface ChatMessage {
@@ -43,12 +43,19 @@ export default function ChatAssistant({ rules, onCreateRule }: ChatAssistantProp
 
   const chatMutation = useMutation({
     mutationFn: async ({ message, rules }: { message: string; rules: Rule[] }) => {
-      const response = await apiRequest({
-        endpoint: '/api/chat/suggest-keys',
+      const response = await fetch('/api/chat/suggest-keys', {
         method: 'POST',
-        body: { message, rules }
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message, rules })
       });
-      return response;
+      
+      if (!response.ok) {
+        throw new Error('Failed to get suggestions');
+      }
+      
+      return response.json();
     },
     onSuccess: (data) => {
       const assistantMessage: ChatMessage = {
