@@ -24,6 +24,7 @@ export default function Home() {
   const [sessionRuleIds, setSessionRuleIds] = useState<Set<number>>(new Set());
   const [recommendedRuleIds, setRecommendedRuleIds] = useState<Set<number>>(new Set());
   const [originalRules, setOriginalRules] = useState<Rule[]>([]);
+  const [draggedRule, setDraggedRule] = useState<Rule | null>(null);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();

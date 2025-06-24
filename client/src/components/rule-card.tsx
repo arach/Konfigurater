@@ -133,7 +133,9 @@ export default function RuleCard({ rule, onEdit, onDelete, isRecommended = false
     <Card className={getCardClassName()}>
       <CardContent className="p-6">
         <div className="flex items-start justify-between mb-4">
-          <div className={`flex items-center space-x-3 ${getHeaderClassName()}`}>
+          <div className="flex items-center space-x-2">
+            <GripVertical className="w-4 h-4 text-slate-400 cursor-move" />
+            <div className={`flex items-center space-x-3 ${getHeaderClassName()}`}>
             <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${getTypeColor(rule.type)}`}>
               <TypeIcon className="w-5 h-5" />
             </div>
@@ -153,6 +155,7 @@ export default function RuleCard({ rule, onEdit, onDelete, isRecommended = false
                 )}
               </div>
             </div>
+          </div>
           </div>
           <div className="flex items-center space-x-2">
             <Button
