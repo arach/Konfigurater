@@ -275,6 +275,8 @@ export default function Home() {
                             onDelete={() => {
                               // TODO: Implement delete functionality
                             }}
+                            isRecommended={recommendedRuleIds.has(rule.id)}
+                            isSessionEdit={sessionRuleIds.has(rule.id)}
                           />
                         ))
                       ) : selectedConfig ? (

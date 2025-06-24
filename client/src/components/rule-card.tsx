@@ -146,7 +146,7 @@ export default function RuleCard({ rule, onEdit, onDelete, isRecommended = false
                 <Badge variant="secondary" className="text-xs">
                   {rule.type ? rule.type.replace('_', ' ') : 'basic'}
                 </Badge>
-                {rule.conditions && (
+                {rule.conditions && rule.conditions !== null && (
                   <Badge variant="outline" className="text-xs">
                     conditional
                   </Badge>
