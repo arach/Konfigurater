@@ -80,10 +80,10 @@ export default function DiffView({ originalRules, newRules, recommendedRuleIds, 
           Configuration ({fullConfig.rules.length} rules total)
         </div>
         <div className="p-4 overflow-auto max-h-96">
-          <div className="text-xs font-mono leading-relaxed">
+          <div className="text-xs font-mono leading-relaxed whitespace-pre">
             <div className="text-slate-600">{"{"}</div>
-            <div className="text-slate-600 ml-2">"title": "Karabiner Configuration",</div>
-            <div className="text-slate-600 ml-2">"rules": [</div>
+            <div className="text-slate-600">  "title": "Karabiner Configuration",</div>
+            <div className="text-slate-600">  "rules": [</div>
             
             {fullConfig.rules.map((rule, index) => {
               const changeType = (rule as any)._changeType;
@@ -94,10 +94,10 @@ export default function DiffView({ originalRules, newRules, recommendedRuleIds, 
                 manipulators: rule.manipulators
               };
               
-              const ruleLines = JSON.stringify(cleanRule, null, 2).split('\n');
+              const ruleLines = JSON.stringify(cleanRule, null, 4).split('\n');
               
               return (
-                <div key={index} className="ml-4">
+                <div key={index} className="ml-2">
                   {ruleLines.map((line, lineIndex) => {
                     const getLineStyle = () => {
                       switch (changeType) {
@@ -128,11 +128,14 @@ export default function DiffView({ originalRules, newRules, recommendedRuleIds, 
                       return null;
                     };
                     
+                    // Preserve original indentation and add our highlighting
+                    const indentedLine = lineIndex === 0 ? `    ${line}` : `    ${line}`;
+                    
                     return (
                       <div key={lineIndex} className={getLineStyle()}>
-                        <span className="text-slate-800">
+                        <span className="text-slate-800 whitespace-pre">
                           {getPrefix()}
-                          {line}
+                          {indentedLine}
                         </span>
                       </div>
                     );
@@ -143,14 +146,14 @@ export default function DiffView({ originalRules, newRules, recommendedRuleIds, 
                       changeType === 'manual-added' ? 'bg-green-100 border-l-4 border-green-500 pl-2' :
                       'bg-slate-50 border-l-4 border-slate-300 pl-2'
                     }>
-                      <span className="text-slate-600">,</span>
+                      <span className="text-slate-600 whitespace-pre">    ,</span>
                     </div>
                   )}
                 </div>
               );
             })}
             
-            <div className="text-slate-600 ml-2">]</div>
+            <div className="text-slate-600">  ]</div>
             <div className="text-slate-600">{"}"}</div>
           </div>
         </div>
