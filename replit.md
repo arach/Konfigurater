@@ -117,6 +117,8 @@ Changelog:
 - June 24, 2025. Enhanced diff view with unified JSON format and proper indentation for better readability
 - June 24, 2025. Implemented drag and drop functionality for rule reordering with visual feedback
 - June 24, 2025. Created comprehensive README with project philosophy, usage instructions, and acknowledgments
+- June 24, 2025. Implemented chat assistant with DOIO-specific key mapping suggestions and conversational interface
+- June 24, 2025. Enhanced chat with conversation history and contextual responses for continuous messaging
 ```
 
 ## User Preferences

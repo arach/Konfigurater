@@ -369,7 +369,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Chat assistant endpoint
   app.post("/api/chat/suggest-keys", async (req, res) => {
     try {
-      const { message, rules } = req.body;
+      const { message, rules, conversationHistory = [] } = req.body;
       
       if (!process.env.OPENAI_API_KEY) {
         return res.status(200).json({ 
@@ -390,8 +390,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return null;
       }).filter(Boolean);
 
-      const suggestions = generateBasicDOIOSuggestions(message, usedCombinations);
-      const response = `Based on your current ${rules.length} rules, I found ${usedCombinations.length} key combinations in use. Here are some available DOIO mappings for "${message}":`;
+      const suggestions = generateBasicDOIOSuggestions(message, usedCombinations, conversationHistory);
+      
+      // Generate contextual response based on conversation history
+      let response;
+      if (conversationHistory.length > 2) {
+        response = `I see you're continuing our conversation. Here are some more suggestions for "${message}":`;
+      } else {
+        response = `Based on your current ${rules.length} rules, I found ${usedCombinations.length} key combinations in use. Here are some available DOIO mappings for "${message}":`;
+      }
 
       res.json({ response, suggestions });
     } catch (error) {
@@ -403,7 +410,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  function generateBasicDOIOSuggestions(message: string, usedCombinations: string[] = []) {
+  function generateBasicDOIOSuggestions(message: string, usedCombinations: string[] = [], conversationHistory: any[] = []) {
     const messageLower = message.toLowerCase();
     const suggestions = [];
     const availableFKeys = ['f13', 'f14', 'f15', 'f16', 'f17', 'f18'].filter(key => 
@@ -434,15 +441,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
 
-    // Generic suggestions
+    // Check conversation history for context
+    const previousSuggestions = conversationHistory
+      .filter(msg => msg.role === 'assistant')
+      .flatMap(msg => msg.suggestions || [])
+      .map(s => s.combination);
+
+    // Generic suggestions (avoid previously suggested combinations)
     if (suggestions.length === 0) {
-      availableFKeys.slice(0, 3).forEach((key, index) => {
+      const freshFKeys = availableFKeys.filter(key => 
+        !previousSuggestions.some(combo => combo.includes(key))
+      );
+      
+      freshFKeys.slice(0, 3).forEach((key, index) => {
         const modifiers = index === 0 ? 'cmd' : index === 1 ? 'cmd+shift' : 'cmd+opt';
         suggestions.push({
           combination: `${modifiers}+${key}`,
-          description: `DOIO macro button ${index + 1}`,
-          reasoning: `${key.toUpperCase()} is available and unused in your configuration`
+          description: `DOIO macro button for ${messageLower}`,
+          reasoning: `${key.toUpperCase()} is available and not previously suggested`
         });
+      });
+    }
+
+    // Provide alternative modifiers if user asks for more options
+    if (messageLower.includes('more') || messageLower.includes('other') || messageLower.includes('different')) {
+      const alternativeModifiers = ['ctrl+cmd', 'opt+shift', 'ctrl+opt'];
+      alternativeModifiers.forEach((mod, index) => {
+        if (availableFKeys[index]) {
+          suggestions.push({
+            combination: `${mod}+${availableFKeys[index]}`,
+            description: `Alternative DOIO mapping`,
+            reasoning: `Different modifier combination for variety`
+          });
+        }
       });
     }
 

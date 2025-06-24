@@ -42,13 +42,17 @@ export default function ChatAssistant({ rules, onCreateRule }: ChatAssistantProp
   const { toast } = useToast();
 
   const chatMutation = useMutation({
-    mutationFn: async ({ message, rules }: { message: string; rules: Rule[] }) => {
+    mutationFn: async ({ message, rules, conversationHistory }: { 
+      message: string; 
+      rules: Rule[]; 
+      conversationHistory?: any[] 
+    }) => {
       const response = await fetch('/api/chat/suggest-keys', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ message, rules })
+        body: JSON.stringify({ message, rules, conversationHistory })
       });
       
       if (!response.ok) {
@@ -59,7 +63,7 @@ export default function ChatAssistant({ rules, onCreateRule }: ChatAssistantProp
     },
     onSuccess: (data) => {
       const assistantMessage: ChatMessage = {
-        id: Date.now().toString(),
+        id: `assistant-${Date.now()}`,
         role: 'assistant',
         content: data.response,
         timestamp: new Date(),
@@ -89,7 +93,7 @@ export default function ChatAssistant({ rules, onCreateRule }: ChatAssistantProp
     if (!input.trim() || chatMutation.isPending) return;
 
     const userMessage: ChatMessage = {
-      id: Date.now().toString(),
+      id: `user-${Date.now()}`,
       role: 'user',
       content: input.trim(),
       timestamp: new Date()
@@ -99,7 +103,17 @@ export default function ChatAssistant({ rules, onCreateRule }: ChatAssistantProp
     const currentInput = input.trim();
     setInput('');
 
-    chatMutation.mutate({ message: currentInput, rules });
+    // Include conversation history for better context
+    const conversationHistory = [...messages, userMessage].slice(-10); // Keep last 10 messages for context
+    
+    chatMutation.mutate({ 
+      message: currentInput, 
+      rules,
+      conversationHistory: conversationHistory.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }))
+    });
   };
 
   const handleCopyToClipboard = (text: string) => {
@@ -215,13 +229,21 @@ export default function ChatAssistant({ rules, onCreateRule }: ChatAssistantProp
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="What command do you want to map?"
+              placeholder={chatMutation.isPending ? "Thinking..." : "Ask about key mappings..."}
               className="flex-1"
               disabled={chatMutation.isPending}
+              autoFocus={isOpen}
             />
             <Button type="submit" disabled={chatMutation.isPending || !input.trim()} size="icon">
-              <Send className="w-4 h-4" />
+              {chatMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
             </Button>
+          </div>
+          <div className="text-xs text-slate-500 mt-2">
+            Ask follow-up questions or request different suggestions
           </div>
         </form>
       </CardContent>
