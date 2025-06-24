@@ -157,6 +157,42 @@ export default function ChatAssistant({
     }
   };
 
+  const handleCreateRuleFromJson = (jsonText: string) => {
+    try {
+      const parsed = JSON.parse(jsonText);
+      
+      if (parsed.manipulators) {
+        onCreateRuleFromJson?.(parsed);
+        toast({
+          title: "Rule Added",
+          description: `Added rule: ${parsed.description}`
+        });
+      } else if (parsed.type === 'basic' && parsed.from && parsed.to) {
+        const rule = {
+          description: parsed.description || "Chat-generated rule",
+          manipulators: [parsed]
+        };
+        onCreateRuleFromJson?.(rule);
+        toast({
+          title: "Rule Added", 
+          description: "Added rule from chat suggestion"
+        });
+      } else {
+        toast({
+          title: "Invalid JSON",
+          description: "JSON doesn't appear to be a valid Karabiner rule",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Parse Error",
+        description: "Failed to parse JSON rule",
+        variant: "destructive"
+      });
+    }
+  };
+
   const clearChat = () => {
     setMessages([
       {
