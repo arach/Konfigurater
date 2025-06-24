@@ -204,22 +204,43 @@ export default function Home() {
       return;
     }
 
-    // Convert each manipulator to our rule format
-    const manipulators = jsonRule.manipulators || [jsonRule];
-    
-    manipulators.forEach((manipulator: any, index: number) => {
-      const newRule = {
-        description: jsonRule.description || manipulator.description || "Chat-generated rule",
-        type: manipulator.type || "basic",
-        fromKey: manipulator.from || {},
-        toActions: manipulator.to || [],
-        conditions: manipulator.conditions || [],
-        order: (rules?.length || 0) + index + 1,
-        configurationId: selectedConfig.id
-      };
+    try {
+      // Convert each manipulator to our rule format
+      const manipulators = jsonRule.manipulators || [jsonRule];
       
-      createRuleMutation.mutate(newRule);
-    });
+      manipulators.forEach((manipulator: any, index: number) => {
+        // Ensure we have the required fields
+        if (!manipulator.from || !manipulator.to) {
+          console.error('Invalid manipulator:', manipulator);
+          toast({
+            title: "Invalid Rule",
+            description: "Rule missing required 'from' or 'to' properties",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        const newRule = {
+          description: jsonRule.description || manipulator.description || "Chat-generated rule",
+          type: manipulator.type || "basic",
+          fromKey: manipulator.from,
+          toActions: manipulator.to,
+          conditions: manipulator.conditions || [],
+          order: (rules?.length || 0) + index + 1,
+          configurationId: selectedConfig.id
+        };
+        
+        console.log('Creating rule:', newRule);
+        createRuleMutation.mutate(newRule);
+      });
+    } catch (error) {
+      console.error('Error creating rule from JSON:', error);
+      toast({
+        title: "Rule Creation Failed",
+        description: "Failed to create rule from JSON",
+        variant: "destructive"
+      });
+    }
   };
 
   const generateJsonPreview = () => {
