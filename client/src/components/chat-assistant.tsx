@@ -161,13 +161,26 @@ export default function ChatAssistant({
     try {
       const parsed = JSON.parse(jsonText);
       
-      if (parsed.manipulators) {
+      // Handle full configuration with rules array
+      if (parsed.rules && Array.isArray(parsed.rules)) {
+        parsed.rules.forEach((rule: any) => {
+          onCreateRuleFromJson?.(rule);
+        });
+        toast({
+          title: "Rules Added",
+          description: `Added ${parsed.rules.length} rule(s) from configuration`
+        });
+      }
+      // Handle single rule with manipulators
+      else if (parsed.manipulators) {
         onCreateRuleFromJson?.(parsed);
         toast({
           title: "Rule Added",
           description: `Added rule: ${parsed.description}`
         });
-      } else if (parsed.type === 'basic' && parsed.from && parsed.to) {
+      }
+      // Handle single manipulator
+      else if (parsed.type === 'basic' && parsed.from && parsed.to) {
         const rule = {
           description: parsed.description || "Chat-generated rule",
           manipulators: [parsed]
@@ -180,7 +193,7 @@ export default function ChatAssistant({
       } else {
         toast({
           title: "Invalid JSON",
-          description: "JSON doesn't appear to be a valid Karabiner rule",
+          description: "JSON doesn't contain valid Karabiner rules or manipulators",
           variant: "destructive"
         });
       }
