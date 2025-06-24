@@ -221,7 +221,7 @@ export default function Home() {
               <div className="bg-white rounded-xl border border-slate-200 h-[calc(100vh-8rem)]">
                 <Tabs defaultValue="rules" className="w-full h-full flex flex-col">
                   <div className="border-b border-slate-200 flex-shrink-0">
-                    <TabsList className="grid w-full grid-cols-4 bg-transparent h-auto p-0">
+                    <TabsList className="grid w-full grid-cols-5 bg-transparent h-auto p-0">
                       <TabsTrigger 
                         value="rules" 
                         className="py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:text-blue-600"
@@ -233,6 +233,12 @@ export default function Home() {
                         className="py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:text-blue-600"
                       >
                         JSON Preview
+                      </TabsTrigger>
+                      <TabsTrigger 
+                        value="diff" 
+                        className="py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:text-blue-600"
+                      >
+                        Changes
                       </TabsTrigger>
                       <TabsTrigger 
                         value="validation" 
@@ -318,7 +324,7 @@ export default function Home() {
                     </div>
                   </TabsContent>
 
-                  <TabsContent value="validation" className="p-6 mt-0 flex-1 overflow-auto">
+                  <TabsContent value="validation" className="p-6 mt-0 flex-1 overflow-auto max-h-full">
                     <div className="space-y-4">
                       <div className="flex items-center space-x-2 text-sm">
                         <div className="w-2 h-2 bg-green-500 rounded-full"></div>
@@ -331,7 +337,77 @@ export default function Home() {
                     </div>
                   </TabsContent>
 
-                  <TabsContent value="recommendations" className="p-6 mt-0 flex-1 overflow-auto">
+                  <TabsContent value="diff" className="p-6 mt-0 flex-1 overflow-auto max-h-full">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-medium text-slate-800">Configuration Changes</h3>
+                        <div className="flex items-center space-x-4 text-sm">
+                          <div className="flex items-center space-x-2">
+                            <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                            <span className="text-slate-600">AI Recommended ({recommendedRuleIds.size})</span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                            <span className="text-slate-600">Session Edits ({sessionRuleIds.size})</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {recommendedRuleIds.size === 0 && sessionRuleIds.size === 0 ? (
+                        <div className="text-center py-12 text-slate-500">
+                          <div className="w-16 h-16 bg-slate-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                            <div className="text-2xl">📄</div>
+                          </div>
+                          <h3 className="text-lg font-medium text-slate-600 mb-2">No Changes Yet</h3>
+                          <p className="text-sm text-slate-500">
+                            Add rules manually or from AI recommendations to see changes here
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-6">
+                          {recommendedRuleIds.size > 0 && (
+                            <div>
+                              <h4 className="text-md font-medium text-purple-700 mb-3 flex items-center">
+                                <div className="w-2 h-2 bg-purple-500 rounded-full mr-2"></div>
+                                AI Recommended Rules ({recommendedRuleIds.size})
+                              </h4>
+                              <div className="space-y-2 pl-4 border-l-2 border-purple-200">
+                                {rules?.filter(rule => recommendedRuleIds.has(rule.id)).map(rule => (
+                                  <div key={rule.id} className="bg-purple-50 rounded-lg p-3 border border-purple-200">
+                                    <div className="font-medium text-purple-800">{rule.description}</div>
+                                    <div className="text-sm text-purple-600 mt-1">
+                                      Added via intelligent device analysis
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {sessionRuleIds.size > 0 && (
+                            <div>
+                              <h4 className="text-md font-medium text-green-700 mb-3 flex items-center">
+                                <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                                Manual Edits ({sessionRuleIds.size})
+                              </h4>
+                              <div className="space-y-2 pl-4 border-l-2 border-green-200">
+                                {rules?.filter(rule => sessionRuleIds.has(rule.id)).map(rule => (
+                                  <div key={rule.id} className="bg-green-50 rounded-lg p-3 border border-green-200">
+                                    <div className="font-medium text-green-800">{rule.description}</div>
+                                    <div className="text-sm text-green-600 mt-1">
+                                      Created or edited in this session
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="recommendations" className="p-6 mt-0 flex-1 overflow-auto max-h-full">
                     <SmartRecommendations
                       configuration={selectedConfig}
                       rules={rules || []}
