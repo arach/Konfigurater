@@ -30,9 +30,12 @@ interface ChatAssistantProps {
   onCreateRule?: (suggestion: KeySuggestion) => void;
 }
 
-export default function ChatAssistant({
-  rules,
-  onCreateRule,
+export default function ChatAssistant({ 
+  rules, 
+  configuration, 
+  exportJsonData, 
+  originalConfiguration,
+  onCreateRule 
 }: ChatAssistantProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {

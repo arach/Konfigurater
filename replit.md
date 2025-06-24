@@ -122,6 +122,7 @@ Changelog:
 - June 24, 2025. Fixed chat to actually use OpenAI API instead of basic suggestions for intelligent responses
 - June 24, 2025. Made chat assistant more conversational and less prescriptive, responding naturally to user input
 - June 24, 2025. Enhanced chat context with existing configuration data, device identifiers, and conflict avoidance
+- June 24, 2025. Added full configuration context to chat - now sends both original and current JSON to ChatGPT for troubleshooting
 ```
 
 ## User Preferences

@@ -502,6 +502,9 @@ export default function Home() {
 
       <ChatAssistant 
         rules={rules || []}
+        configuration={selectedConfig}
+        exportJsonData={exportJsonData}
+        originalConfiguration={selectedConfig?.data}
         onCreateRule={handleChatCreateRule}
       />
     </div>
