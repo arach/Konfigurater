@@ -408,25 +408,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const { default: OpenAI } = await import('openai');
         const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-        const systemPrompt = `You are a Karabiner-Elements JSON expert. Provide specific working examples using the user's actual configuration context.
+        const systemPrompt = `You are a Karabiner-Elements JSON expert. NEVER use shell_command - always provide real key mappings.
 
 Current Configuration:
 - ${rules.length} existing rules using: ${usedCombinations.join(', ') || 'none'}
-- Device identifiers found: ${JSON.stringify(deviceInfo)}
-- Rules data: ${JSON.stringify(rules.slice(0, 3))} ${rules.length > 3 ? '...' : ''}
+- Device identifiers: ${JSON.stringify(deviceInfo)}
 
-When providing JSON examples:
-1. Use actual vendor_id/product_id from existing rules when available
-2. Include proper device conditions if user has device-specific rules
-3. Avoid conflicts with existing key combinations
-4. Provide complete, working JSON structures
+CRITICAL RULES:
+1. NEVER use "shell_command" - it's useless
+2. Always use actual key mappings with "key_code" and "modifiers"
+3. Provide specific, working examples like opening apps, typing text, or triggering shortcuts
+4. Use existing device IDs: vendor_id/product_id from user's config
 
-Always respond with JSON format:
+Example of GOOD "to" structure:
+\`\`\`json
+"to": [
+  {
+    "key_code": "space",
+    "modifiers": ["left_command"]
+  }
+]
+\`\`\`
+
+Example of BAD "to" structure (NEVER DO THIS):
+\`\`\`json
+"to": [
+  {
+    "shell_command": "# Configure action"
+  }
+]
+\`\`\`
+
+Always respond with JSON:
 {
-  "response": "Your response with actual code blocks using existing device IDs and avoiding conflicts"
-}
-
-Use markdown code blocks with \`\`\`json for examples.`;
+  "response": "Your helpful response with working key mappings"
+}`;
 
         const response = await openai.chat.completions.create({
           model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
