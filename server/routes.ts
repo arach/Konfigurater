@@ -387,6 +387,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log('Used combinations:', usedCombinations);
       
+      // Extract device information from existing rules
+      const deviceInfo = rules.map((rule: any) => {
+        const conditions = rule.conditions || [];
+        const deviceConditions = conditions.filter((c: any) => c.type === 'device_if');
+        return deviceConditions.map((dc: any) => dc.identifiers || []).flat();
+      }).flat();
+      
+      console.log('Device info from rules:', deviceInfo);
+      
       if (!process.env.OPENAI_API_KEY) {
         return res.status(200).json({ 
           response: "No OpenAI API key found. Using basic suggestions mode.",
@@ -399,18 +408,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const { default: OpenAI } = await import('openai');
         const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-        const systemPrompt = `You are a Karabiner-Elements JSON expert. When users ask for JSON code, provide specific working examples.
+        const systemPrompt = `You are a Karabiner-Elements JSON expert. Provide specific working examples using the user's actual configuration context.
 
-Context: User has ${rules.length} rules using: ${usedCombinations.join(', ') || 'none'}
+Current Configuration:
+- ${rules.length} existing rules using: ${usedCombinations.join(', ') || 'none'}
+- Device identifiers found: ${JSON.stringify(deviceInfo)}
+- Rules data: ${JSON.stringify(rules.slice(0, 3))} ${rules.length > 3 ? '...' : ''}
 
-IMPORTANT: When asked for JSON structure, include actual code blocks in your response using markdown formatting.
+When providing JSON examples:
+1. Use actual vendor_id/product_id from existing rules when available
+2. Include proper device conditions if user has device-specific rules
+3. Avoid conflicts with existing key combinations
+4. Provide complete, working JSON structures
 
-Example response format:
+Always respond with JSON format:
 {
-  "response": "Here's the JSON for mapping F13 to Command+Shift+P:\n\n\`\`\`json\n\"to\": [\n  {\n    \"key_code\": \"p\",\n    \"modifiers\": [\"left_command\", \"left_shift\"]\n  }\n]\n\`\`\`\n\nThis replaces the shell_command with direct key mapping."
+  "response": "Your response with actual code blocks using existing device IDs and avoiding conflicts"
 }
 
-Always provide working code when requested. Use f13-f24 for DOIO devices.`;
+Use markdown code blocks with \`\`\`json for examples.`;
 
         const response = await openai.chat.completions.create({
           model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
@@ -427,23 +443,25 @@ Always provide working code when requested. Use f13-f24 for DOIO devices.`;
           temperature: 0.8
         });
 
-        const result = JSON.parse(response.choices[0].message.content || '{}');
+        let result;
+        try {
+          result = JSON.parse(response.choices[0].message.content || '{}');
+        } catch (parseError) {
+          console.error('JSON parse error:', parseError);
+          result = {
+            response: "I had trouble parsing my response. Let me give you the basic structure you need.",
+            suggestions: []
+          };
+        }
+        
         console.log('OpenAI response:', result);
         
-        // Check if user is asking for JSON structure and provide direct answer
-        if (message.toLowerCase().includes('json') && message.toLowerCase().includes('to')) {
-          result.response = `Here's the correct JSON structure for the "to" part to map F13 to Command+Shift+P:
-
-\`\`\`json
-"to": [
-  {
-    "key_code": "p",
-    "modifiers": ["left_command", "left_shift"]
-  }
-]
-\`\`\`
-
-Replace your \`shell_command\` section with this key mapping structure. This will directly send the Command+Shift+P key combination when F13 is pressed.`;
+        // Enhance response with actual device information if available
+        if (message.toLowerCase().includes('json') && deviceInfo.length > 0) {
+          const deviceIds = deviceInfo[0];
+          if (deviceIds.vendor_id && deviceIds.product_id) {
+            result.response += `\n\nBased on your existing configuration, use these device identifiers:\n- vendor_id: ${deviceIds.vendor_id}\n- product_id: ${deviceIds.product_id}`;
+          }
         }
         
         // Ensure suggestions array exists

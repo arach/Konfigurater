@@ -1,16 +1,16 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
-import { MessageCircle, Send, Loader2, Copy, Trash2 } from 'lucide-react';
-import { type Rule } from '@shared/schema';
-import { useMutation } from '@tanstack/react-query';
+import React, { useState, useRef, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
+import { MessageCircle, Send, Loader2, Copy, Trash2 } from "lucide-react";
+import { type Rule } from "@shared/schema";
+import { useMutation } from "@tanstack/react-query";
 
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from "@/hooks/use-toast";
 
 interface ChatMessage {
   id: string;
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   content: string;
   timestamp: Date;
   suggestions?: KeySuggestion[];
@@ -27,57 +27,65 @@ interface ChatAssistantProps {
   onCreateRule?: (suggestion: KeySuggestion) => void;
 }
 
-export default function ChatAssistant({ rules, onCreateRule }: ChatAssistantProps) {
+export default function ChatAssistant({
+  rules,
+  onCreateRule,
+}: ChatAssistantProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
-      id: '1',
-      role: 'assistant',
-      content: "Hi! I'm your keyboard shortcut assistant. I can help you find available key combinations that aren't already used in your configuration. Just tell me what command or action you want to map, and I'll suggest some options!",
-      timestamp: new Date()
-    }
+      id: "1",
+      role: "assistant",
+      content:
+        "Hi! I'm your keyboard shortcut assistant. I can help you find available key combinations that aren't already used in your configuration. Just tell me what command or action you want to map, and I'll suggest some options!",
+      timestamp: new Date(),
+    },
   ]);
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   const chatMutation = useMutation({
-    mutationFn: async ({ message, rules, conversationHistory }: { 
-      message: string; 
-      rules: Rule[]; 
-      conversationHistory?: any[] 
+    mutationFn: async ({
+      message,
+      rules,
+      conversationHistory,
+    }: {
+      message: string;
+      rules: Rule[];
+      conversationHistory?: any[];
     }) => {
-      const response = await fetch('/api/chat/suggest-keys', {
-        method: 'POST',
+      const response = await fetch("/api/chat/suggest-keys", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ message, rules, conversationHistory })
+        body: JSON.stringify({ message, rules, conversationHistory }),
       });
-      
+
       if (!response.ok) {
-        throw new Error('Failed to get suggestions');
+        throw new Error("Failed to get suggestions");
       }
-      
+
       return response.json();
     },
     onSuccess: (data) => {
       const assistantMessage: ChatMessage = {
         id: `assistant-${Date.now()}`,
-        role: 'assistant',
+        role: "assistant",
         content: data.response,
         timestamp: new Date(),
-        suggestions: data.suggestions
+        suggestions: data.suggestions,
       };
-      setMessages(prev => [...prev, assistantMessage]);
+      setMessages((prev) => [...prev, assistantMessage]);
     },
     onError: (error) => {
       toast({
         title: "Chat Error",
         description: "Failed to get suggestions. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
       });
-    }
+    },
   });
 
   const scrollToBottom = () => {
@@ -94,25 +102,25 @@ export default function ChatAssistant({ rules, onCreateRule }: ChatAssistantProp
 
     const userMessage: ChatMessage = {
       id: `user-${Date.now()}`,
-      role: 'user',
+      role: "user",
       content: input.trim(),
-      timestamp: new Date()
+      timestamp: new Date(),
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     const currentInput = input.trim();
-    setInput('');
+    setInput("");
 
     // Include conversation history for better context
     const conversationHistory = [...messages, userMessage].slice(-10); // Keep last 10 messages for context
-    
-    chatMutation.mutate({ 
-      message: currentInput, 
+
+    chatMutation.mutate({
+      message: currentInput,
       rules,
-      conversationHistory: conversationHistory.map(msg => ({
+      conversationHistory: conversationHistory.map((msg) => ({
         role: msg.role,
-        content: msg.content
-      }))
+        content: msg.content,
+      })),
     });
   };
 
@@ -120,7 +128,7 @@ export default function ChatAssistant({ rules, onCreateRule }: ChatAssistantProp
     navigator.clipboard.writeText(text);
     toast({
       title: "Copied!",
-      description: "Key combination copied to clipboard"
+      description: "Key combination copied to clipboard",
     });
   };
 
@@ -129,7 +137,7 @@ export default function ChatAssistant({ rules, onCreateRule }: ChatAssistantProp
       onCreateRule(suggestion);
       toast({
         title: "Rule Created",
-        description: `Added new rule for ${suggestion.combination}`
+        description: `Added new rule for ${suggestion.combination}`,
       });
     }
   };
@@ -137,11 +145,12 @@ export default function ChatAssistant({ rules, onCreateRule }: ChatAssistantProp
   const clearChat = () => {
     setMessages([
       {
-        id: '1',
-        role: 'assistant',
-        content: "Hi! I'm your keyboard shortcut assistant. I can help you find available key combinations that aren't already used in your configuration. Just tell me what command or action you want to map, and I'll suggest some options!",
-        timestamp: new Date()
-      }
+        id: "1",
+        role: "assistant",
+        content:
+          "Hi! I'm your keyboard shortcut assistant. I can help you find key combinations that aren't already used in your configuration and also help you map keys more efficiently. Just tell me what command or action you want to map, and I'll suggest some options!",
+        timestamp: new Date(),
+      },
     ]);
   };
 
@@ -188,19 +197,22 @@ export default function ChatAssistant({ rules, onCreateRule }: ChatAssistantProp
       <div className="flex-1 flex flex-col min-h-0">
         <div className="flex-1 overflow-y-auto p-3 space-y-3">
           {messages.map((message) => (
-            <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div
+              key={message.id}
+              className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+            >
               <div
                 className={`max-w-[85%] p-2 rounded-lg text-sm ${
-                  message.role === 'user'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-slate-100 text-slate-800'
+                  message.role === "user"
+                    ? "bg-blue-600 text-white"
+                    : "bg-slate-100 text-slate-800"
                 }`}
               >
                 <div className="whitespace-pre-wrap break-words">
-                  {message.content.split('```').map((part, index) => {
+                  {message.content.split("```").map((part, index) => {
                     if (index % 2 === 1) {
                       // This is a code block
-                      const code = part.replace(/^json\n/, '');
+                      const code = part.replace(/^json\n/, "");
                       return (
                         <div key={index} className="relative my-2">
                           <pre className="bg-slate-800 text-green-400 p-3 rounded text-xs overflow-x-auto font-mono">
@@ -219,11 +231,14 @@ export default function ChatAssistant({ rules, onCreateRule }: ChatAssistantProp
                     return <span key={index}>{part}</span>;
                   })}
                 </div>
-                
+
                 {message.suggestions && message.suggestions.length > 0 && (
                   <div className="mt-2 space-y-2">
                     {message.suggestions.map((suggestion, index) => (
-                      <div key={index} className="bg-white p-2 rounded border border-slate-200">
+                      <div
+                        key={index}
+                        className="bg-white p-2 rounded border border-slate-200"
+                      >
                         <div className="flex items-center justify-between mb-1">
                           <code className="bg-slate-100 px-1 py-0.5 rounded text-xs font-mono text-slate-800">
                             {suggestion.combination}
@@ -232,7 +247,9 @@ export default function ChatAssistant({ rules, onCreateRule }: ChatAssistantProp
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => handleCopyToClipboard(suggestion.combination)}
+                              onClick={() =>
+                                handleCopyToClipboard(suggestion.combination)
+                              }
                               className="h-5 w-5 p-0 text-slate-600 hover:text-slate-800"
                             >
                               <Copy className="w-3 h-3" />
@@ -248,7 +265,9 @@ export default function ChatAssistant({ rules, onCreateRule }: ChatAssistantProp
                             )}
                           </div>
                         </div>
-                        <p className="text-xs text-slate-500">{suggestion.reasoning}</p>
+                        <p className="text-xs text-slate-500">
+                          {suggestion.reasoning}
+                        </p>
                       </div>
                     ))}
                   </div>
@@ -273,14 +292,18 @@ export default function ChatAssistant({ rules, onCreateRule }: ChatAssistantProp
               <Input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder={chatMutation.isPending ? "Thinking..." : "Ask about key mappings..."}
+                placeholder={
+                  chatMutation.isPending
+                    ? "Thinking..."
+                    : "Ask about key mappings..."
+                }
                 className="flex-1 text-sm"
                 disabled={chatMutation.isPending}
                 autoFocus={isOpen}
               />
-              <Button 
-                type="submit" 
-                disabled={chatMutation.isPending || !input.trim()} 
+              <Button
+                type="submit"
+                disabled={chatMutation.isPending || !input.trim()}
                 size="sm"
                 className="px-3"
               >
@@ -292,7 +315,7 @@ export default function ChatAssistant({ rules, onCreateRule }: ChatAssistantProp
               </Button>
             </div>
             <div className="text-xs text-slate-500 mt-1">
-              Ask about DOIO mappings or follow-up questions
+              Ask about key mappings or follow-up questions
             </div>
           </form>
         </div>
