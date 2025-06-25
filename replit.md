@@ -125,6 +125,9 @@ Changelog:
 - June 24, 2025. Added full configuration context to chat - now sends both original and current JSON to ChatGPT for troubleshooting
 - June 24, 2025. Added "Add Rule" button to chat JSON code blocks - users can directly import rule configurations from ChatGPT responses
 - June 24, 2025. Fixed diff view tracking to properly distinguish between original imported rules and session modifications
+- June 25, 2025. Enhanced AI chat with comprehensive context including full JSON analysis, device identification, and expert-level Karabiner assistance
+- June 25, 2025. Implemented drag-and-drop rule reordering with visual feedback and proper backend integration
+- June 25, 2025. Created Monaco-based JSON editor for rules with syntax highlighting, validation, and error detection
 ```
 
 ## User Preferences

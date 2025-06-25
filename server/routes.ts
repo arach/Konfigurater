@@ -573,6 +573,25 @@ Always respond with JSON:
     }
   });
 
+  function extractDeviceInfo(rules: Rule[]): string {
+    const devices = new Set<string>();
+    
+    rules.forEach(rule => {
+      if (rule.conditions) {
+        rule.conditions.forEach((condition: any) => {
+          if (condition.type === 'device_if' && condition.identifiers) {
+            condition.identifiers.forEach((id: any) => {
+              const deviceStr = `vendor_id: ${id.vendor_id}, product_id: ${id.product_id}`;
+              devices.add(deviceStr);
+            });
+          }
+        });
+      }
+    });
+
+    return devices.size > 0 ? Array.from(devices).join('\n- ') : 'No device-specific conditions found';
+  }
+
   function generateBasicDOIOSuggestions(message: string, usedCombinations: string[] = [], conversationHistory: any[] = []) {
     const messageLower = message.toLowerCase();
     const suggestions = [];
