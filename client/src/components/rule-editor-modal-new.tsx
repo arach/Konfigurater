@@ -9,10 +9,12 @@ import Editor from "@monaco-editor/react";
 
 // Prevent ResizeObserver errors
 const originalError = console.error;
-console.error = (...args) => {
-  if (args[0]?.includes?.('ResizeObserver')) return;
-  originalError(...args);
-};
+if (typeof window !== 'undefined') {
+  console.error = (...args) => {
+    if (args[0]?.includes?.('ResizeObserver')) return;
+    originalError(...args);
+  };
+}
 
 interface RuleEditorModalProps {
   rule: Rule | null;
@@ -106,7 +108,12 @@ export default function RuleEditorModal({ rule, configurationId, onClose, onSave
         configurationId: configurationId || rule?.configurationId
       };
 
-      const url = rule ? `/api/rules/${rule.id}` : `/api/configurations/${configurationId}/rules`;
+      // Ensure we have a valid configuration ID
+      if (!ruleData.configurationId) {
+        throw new Error("Configuration ID is required");
+      }
+
+      const url = rule ? `/api/rules/${rule.id}` : `/api/configurations/${ruleData.configurationId}/rules`;
       const method = rule ? "PUT" : "POST";
 
       const response = await fetch(url, {
@@ -128,6 +135,7 @@ export default function RuleEditorModal({ rule, configurationId, onClose, onSave
       });
 
       onSave(savedRule);
+      onClose();
     } catch (error) {
       console.error("Failed to save rule:", error);
       toast({
@@ -174,9 +182,34 @@ export default function RuleEditorModal({ rule, configurationId, onClose, onSave
                   wordWrap: "on",
                   lineNumbers: "on",
                   folding: true,
-                  bracketPairColorization: { enabled: true }
+                  bracketPairColorization: { enabled: true },
+                  tabSize: 2,
+                  insertSpaces: true
                 }}
                 theme="vs-light"
+                loading={<div className="flex items-center justify-center h-full">Loading editor...</div>}
+                onMount={(editor, monaco) => {
+                  // Configure JSON schema validation for Karabiner rules
+                  monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
+                    validate: true,
+                    schemas: [{
+                      uri: "http://karabiner-rule.schema.json",
+                      fileMatch: ["*"],
+                      schema: {
+                        type: "object",
+                        properties: {
+                          description: { type: "string" },
+                          type: { type: "string", enum: ["basic"] },
+                          from: { type: "object" },
+                          to: { type: "array" },
+                          conditions: { type: "array" },
+                          enabled: { type: "boolean" }
+                        },
+                        required: ["description", "from", "to"]
+                      }
+                    }]
+                  });
+                }}
               />
             </div>
             {jsonError && (
