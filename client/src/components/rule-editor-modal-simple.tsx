@@ -1,20 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { type Rule } from "@shared/schema";
-import Editor from "@monaco-editor/react";
-
-// Prevent ResizeObserver errors
-const originalError = console.error;
-if (typeof window !== 'undefined') {
-  console.error = (...args) => {
-    if (args[0]?.includes?.('ResizeObserver')) return;
-    originalError(...args);
-  };
-}
 
 interface RuleEditorModalProps {
   rule: Rule | null;
@@ -26,6 +16,7 @@ interface RuleEditorModalProps {
 export default function RuleEditorModal({ rule, configurationId, onClose, onSave }: RuleEditorModalProps) {
   const [jsonContent, setJsonContent] = useState("");
   const [jsonError, setJsonError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -86,6 +77,8 @@ export default function RuleEditorModal({ rule, configurationId, onClose, onSave
   };
 
   const handleSave = async () => {
+    setIsLoading(true);
+    
     const parsedRule = validateJson(jsonContent);
     if (!parsedRule) {
       toast({
@@ -93,6 +86,7 @@ export default function RuleEditorModal({ rule, configurationId, onClose, onSave
         description: jsonError,
         variant: "destructive",
       });
+      setIsLoading(false);
       return;
     }
 
@@ -115,9 +109,6 @@ export default function RuleEditorModal({ rule, configurationId, onClose, onSave
 
       const url = rule ? `/api/rules/${rule.id}` : `/api/configurations/${ruleData.configurationId}/rules`;
       const method = rule ? "PUT" : "POST";
-
-      console.log('Saving rule data:', ruleData);
-      console.log('URL:', url, 'Method:', method);
 
       const response = await fetch(url, {
         method,
@@ -146,22 +137,21 @@ export default function RuleEditorModal({ rule, configurationId, onClose, onSave
         description: error instanceof Error ? error.message : "Failed to save rule",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleEditorChange = (value: string | undefined) => {
-    const newValue = value || "";
-    setJsonContent(newValue);
-    
-    // Debounced validation to avoid constant error checking while typing
-    if (newValue.trim()) {
-      const timeoutId = setTimeout(() => {
-        validateJson(newValue);
-      }, 500);
-      
-      return () => clearTimeout(timeoutId);
-    } else {
-      setJsonError("");
+  const formatJson = () => {
+    try {
+      const parsed = JSON.parse(jsonContent);
+      setJsonContent(JSON.stringify(parsed, null, 2));
+    } catch (error) {
+      toast({
+        title: "Format Failed",
+        description: "Cannot format invalid JSON",
+        variant: "destructive",
+      });
     }
   };
 
@@ -175,65 +165,32 @@ export default function RuleEditorModal({ rule, configurationId, onClose, onSave
         </DialogHeader>
 
         <div className="flex-1 flex flex-col space-y-4">
-          <div className="flex-1">
-            <Label className="text-sm font-medium mb-2 block">
+          <div className="flex justify-between items-center">
+            <Label className="text-sm font-medium">
               Rule Configuration (JSON)
             </Label>
-            <div className="border rounded-md overflow-hidden h-full">
-              <Editor
-                height="100%"
-                defaultLanguage="json"
-                value={jsonContent}
-                onChange={handleEditorChange}
-                options={{
-                  minimap: { enabled: false },
-                  formatOnPaste: true,
-                  formatOnType: true,
-                  automaticLayout: true,
-                  scrollBeyondLastLine: false,
-                  wordWrap: "on",
-                  lineNumbers: "on",
-                  folding: true,
-                  bracketPairColorization: { enabled: true },
-                  tabSize: 2,
-                  insertSpaces: true
-                }}
-                theme="vs-light"
-                loading={<div className="flex items-center justify-center h-full">Loading editor...</div>}
-                onMount={(editor, monaco) => {
-                  try {
-                    // Configure JSON schema validation for Karabiner rules
-                    monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
-                      validate: true,
-                      allowComments: false,
-                      schemas: [{
-                        uri: "http://karabiner-rule.schema.json",
-                        fileMatch: ["*"],
-                        schema: {
-                          type: "object",
-                          properties: {
-                            description: { type: "string" },
-                            type: { type: "string", enum: ["basic"] },
-                            from: { type: "object" },
-                            to: { type: "array" },
-                            conditions: { type: "array" },
-                            enabled: { type: "boolean" }
-                          },
-                          required: ["description", "from", "to"]
-                        }
-                      }]
-                    });
-                    
-                    // Auto-format on focus loss
-                    editor.onDidBlurEditorText(() => {
-                      editor.getAction('editor.action.formatDocument')?.run();
-                    });
-                  } catch (error) {
-                    console.warn('Monaco editor setup warning:', error);
-                  }
-                }}
-              />
-            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={formatJson}
+              disabled={!!jsonError}
+            >
+              Format JSON
+            </Button>
+          </div>
+          
+          <div className="flex-1">
+            <Textarea
+              value={jsonContent}
+              onChange={(e) => {
+                setJsonContent(e.target.value);
+                if (e.target.value.trim()) {
+                  validateJson(e.target.value);
+                }
+              }}
+              className="h-full font-mono text-sm resize-none"
+              placeholder="Enter JSON configuration..."
+            />
             {jsonError && (
               <div className="text-red-600 text-sm mt-2 p-2 bg-red-50 rounded">
                 Error: {jsonError}
@@ -242,22 +199,21 @@ export default function RuleEditorModal({ rule, configurationId, onClose, onSave
           </div>
 
           <div className="text-xs text-slate-500 p-3 bg-slate-50 rounded">
-            <strong>Tip:</strong> Use Ctrl+Space for autocomplete, Ctrl+Shift+F to format JSON. 
-            The editor supports full Karabiner-Elements rule syntax including complex modifiers, 
-            device conditions, and simultaneous key combinations.
+            <strong>Tip:</strong> The editor supports full Karabiner-Elements rule syntax including complex modifiers, 
+            device conditions, and simultaneous key combinations. Use the Format JSON button to clean up formatting.
           </div>
         </div>
 
         <div className="flex justify-end space-x-2 pt-4 border-t">
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={onClose} disabled={isLoading}>
             Cancel
           </Button>
           <Button 
             onClick={handleSave}
-            disabled={!!jsonError}
+            disabled={!!jsonError || isLoading}
             className="bg-blue-600 hover:bg-blue-700"
           >
-            {rule ? "Update Rule" : "Create Rule"}
+            {isLoading ? "Saving..." : (rule ? "Update Rule" : "Create Rule")}
           </Button>
         </div>
       </DialogContent>

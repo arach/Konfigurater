@@ -4,7 +4,7 @@ import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import Header from "@/components/header";
 import Sidebar from "@/components/sidebar";
 import RuleCard from "@/components/rule-card";
-import RuleEditorModal from "@/components/rule-editor-modal-new";
+import RuleEditorModal from "@/components/rule-editor-modal-simple";
 import ValidationPanel from "@/components/validation-panel";
 import SmartRecommendations from "@/components/smart-recommendations";
 import DiffView from "@/components/diff-view";
